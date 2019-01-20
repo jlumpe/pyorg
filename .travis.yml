@@ -1,0 +1,18 @@
+language: python
+python:
+  - '3.6'
+
+# Whitelist of branches to build
+branches:
+  only:
+    - master
+
+# Avoid email notifications on every build
+notifications:
+  email: false
+
+# Installation command
+install: python setup.py install
+
+# Run pytest
+script: python -m pytest -v
