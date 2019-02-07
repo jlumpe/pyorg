@@ -4,7 +4,7 @@ from functools import singledispatch
 
 
 __all__ = ['ElispAstNode', 'Form', 'Literal', 'Symbol', 'Cons', 'List', 'Quote',
-           'to_elisp', 'make_list', 'symbols', 'quote', 'cons']
+           'Raw', 'to_elisp', 'make_list', 'symbols', 'quote', 'cons']
 
 
 class ElispAstNode:
@@ -92,6 +92,16 @@ class Quote(Form):
 
 	def __eq__(self, other):
 		return isinstance(other, Quote) and other.form == self.form
+
+
+class Raw(ElispAstNode):
+	"""Just raw code to be pasted in at this point."""
+
+	def __init__(self, src):
+		self.src = src
+
+	def __eq__(self, other):
+		return isinstance(other, Raw) and other.src == self.src
 
 
 @singledispatch

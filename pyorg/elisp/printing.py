@@ -43,3 +43,8 @@ def _print_list(list_):
 @print_elisp.register(Quote)
 def _print_quote(quote):
 	return "'" + print_elisp(quote.form)
+
+
+@print_elisp.register(Raw)
+def _pring_raw(raw):
+	return raw.src
