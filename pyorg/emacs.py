@@ -5,9 +5,25 @@ from subprocess import run, PIPE
 import json
 from ast import literal_eval
 
+from .elisp import ElispAstNode, E, Raw
 
-def make_progn(forms):
-	return '(progn\n%s)' % '\n  '.join(forms)
+
+def get_source(src):
+	"""Get source code from string, AST node, or sequence of these."""
+	if isinstance(src, (str, ElispAstNode)):
+		return str(src)
+
+	body = []
+	for item in src:
+		if isinstance(item, str):
+			body.append(Raw(item))
+		elif isinstance(item, ElispAstNode):
+			body.append(item)
+		else:
+			raise TypeError('Sequence elements must be strings or AST nodes')
+
+	return str(E.progn(*body))
+
 
 def _print_json(source):
 	return '(princ (json-encode %s))' % source
@@ -125,9 +141,7 @@ class EmacsInterface:
 			Command output or completed process object, depending on value of
 			``process``.
 		"""
-		if not isinstance(source, str):
-			source = make_progn(source)
-
+		source = get_source(source)
 		result = self.run(['-eval', source], **kwargs)
 
 		if process:
