@@ -1,0 +1,34 @@
+{#  Displays exported .org file #}
+
+{% extends 'base.html.j2' %}
+
+{% set depth = parents | length %}
+
+{% block content %}
+    <div class="container">
+
+        <nav><ol class="breadcrumb">
+            {% for parent in parents | list %}
+                <li class="breadcrumb-item">
+                    <a href="./{{ '../' * (depth - loop.index0) }}">{{ parent }}</a>
+                </li>
+            {% endfor %}
+            <li class="breadcrumb-item active">{{ dirname }}</li>
+        </ol></nav>
+
+		<div class="row">
+			<div class="col org">
+                <h1>{{ dirname }}/</h1>
+                <ul>
+                    {% for dirname in dirs | sort %}
+						<li><a href="{{ dirname }}/">{{ dirname }}/</a></li>
+                    {% endfor %}
+                    {% for filename in files | sort %}
+                        <li><a href="{{ filename }}">{{ filename }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+    </div>
+{% endblock content %}

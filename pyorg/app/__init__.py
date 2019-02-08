@@ -1,6 +1,7 @@
 import os
 
-from flask import Flask, render_template, Markup, send_file, abort
+from flask import (Flask, render_template, Markup, send_file, abort, url_for,
+                   redirect)
 
 from pyorg.emacs import EmacsInterface
 
@@ -24,22 +25,77 @@ def home():
 	return render_template('home.html.j2')
 
 
+def view_org_file(filepath):
+	dirname, filename = os.path.split(filepath)
+	name = os.path.splitext(filename)[0]
+
+	fullpath = os.path.join(EXPORT_DIR, filepath)
+	htmlfile = os.path.join(EXPORT_DIR, dirname, name + '.html')
+
+	try:
+		content = Markup(get_file_content(htmlfile))
+
+	except FileNotFoundError:
+		return render_template('orgfile-404.html.j2', file=fullpath), 404
+
+	return render_template(
+		'orgfile.html.j2',
+		file_content=content,
+		page_title=filename,
+		filename=filename,
+		filetitle=name,
+		parents=dirname.split(os.path.sep),
+	)
+
+
+def view_org_directory(dirpath):
+	fullpath = os.path.join(EXPORT_DIR, dirpath)
+
+	dirs = []
+	files = []
+
+	for entry in os.scandir(fullpath):
+		if entry.is_dir():
+			dirs.append(entry.name)
+
+		if entry.is_file() and entry.name.endswith('.html'):
+			files.append(entry.name.rsplit('.', 1)[0] + '.org')
+
+	*parents, dirname = ['root', *dirpath.rstrip('/').split()]
+
+	return render_template(
+		'dirindex.html.j2',
+		dirname=dirname,
+		page_title=dirname,
+		dirs=dirs,
+		files=files,
+		parents=parents,
+	)
+
+
+def get_other_file(filepath):
+	fullpath = os.path.join(EXPORT_DIR, filepath)
+
+	if not os.path.exists(fullpath):
+		abort(404)
+
+	if os.path.isdir(fullpath):
+		return redirect(url_for('viewfile', path=filepath + '/'))
+
+	return send_file(fullpath)
+
+
+@app.route('/org/')
+def orgroot():
+	return view_org_directory('')
+
+
 @app.route('/org/<path:path>')
 def viewfile(path):
-	name = os.path.basename(path)
-	ext = os.path.splitext(name)[1]
-	fullpath = os.path.join(EXPORT_DIR, path)
+	if path.endswith('/'):
+		return view_org_directory(path)
 
-	if ext == '.html':
-		try:
-			content = Markup(get_file_content(fullpath))
-			return render_template('vieworg.html.j2', file_content=content, page_title=name)
+	if path.endswith('.org'):
+		return view_org_file(path)
 
-		except FileNotFoundError:
-			return render_template('vieworg-404.html.j2', file=fullpath), 404
-
-	else:
-		try:
-			return send_file(fullpath)
-		except FileNotFoundError:
-			abort(404)
+	return get_other_file(path)
