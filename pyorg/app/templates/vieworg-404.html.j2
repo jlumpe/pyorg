@@ -1,0 +1,15 @@
+{#  Displays exported .org file #}
+
+{% extends 'base.html.j2' %}
+
+{% set page_title = 'File not found' %}
+
+{% block content %}
+    <div class="container">
+		<div class="row">
+			<div class="col">
+				<p>File {{ file }} not found.</p>
+			</div>
+        </div>
+    </div>
+{% endblock content %}
