@@ -45,7 +45,7 @@ function compile_sass() {
 }
 
 function watch_sass() {
-    watch('./assets/**/*.scss', [compile_sass]);
+    watch('./assets/**/*.scss', compile_sass);
 }
 
 
@@ -61,4 +61,5 @@ exports.libs = libs;
 exports.sass = compile_sass;
 exports.build = build;
 exports.clean = clean;
+exports.watch = watch_sass;
 exports.default = series(clean, build);
