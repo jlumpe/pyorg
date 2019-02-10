@@ -1,1 +1,69 @@
 @import 'bootstrap/scss/bootstrap.scss';
+
+body {
+  margin-top: 10px;
+}
+
+
+.org {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.org-toc-container {
+  width: 300px;
+  flex-shrink: 0;
+}
+
+#table-of-contents {
+  width: 250px;
+  position: fixed;
+  margin-left: -290px;
+
+  h2 { display: none; }
+}
+
+#text-table-of-contents {
+  & > ul { padding-left: 0; }
+
+  ul {
+    padding-left: 20px;
+
+    li {
+      list-style: none;
+    }
+  }
+}
+
+
+.org-content {
+  max-width: 800px;
+  flex-shrink: 1;
+
+  h2, h3, h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  dd {
+    margin-left: 1em;
+    & > ul, ol { margin-left: -1em; }
+  }
+
+  table {
+    @extend .table;
+  }
+
+  span.tag {
+    display: block;
+    float: right;
+
+    & > span {
+      @extend .badge, .badge-secondary;
+      font-weight: normal;
+      font-size: 60%;
+      vertical-align: middle;
+    }
+  }
+}
