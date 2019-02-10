@@ -2,6 +2,7 @@
 
 {% extends 'base.html.j2' %}
 
+{% set page_title = dirname %}
 {% set depth = parents | length %}
 
 {% block content %}
@@ -17,7 +18,7 @@
         </ol></nav>
 
 		<div class="row">
-			<div class="col org">
+			<div class="col">
                 <h1>{{ dirname }}/</h1>
                 <ul>
                     {% for dirname in dirs | sort %}

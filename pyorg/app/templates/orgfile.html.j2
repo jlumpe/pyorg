@@ -2,10 +2,11 @@
 
 {% extends 'base.html.j2' %}
 
+{% set page_title = file_name %}
 {% set depth = parents | length %}
 
 {% block content %}
-    <div class="container">
+    <div class="container-fluid">
 
         <nav><ol class="breadcrumb">
             {% for dirname in ['root'] + (parents | list) %}
@@ -13,12 +14,13 @@
                     <a href="./{{ '../' * (depth - loop.index0) }}">{{ dirname }}</a>
                 </li>
             {% endfor %}
-            <li class="breadcrumb-item active">{{ filename }}</li>
+            <li class="breadcrumb-item active">{{ file_name }}</li>
         </ol></nav>
 
-		<div class="row">
-			<div class="col org">
-                <h1>{{ filetitle | capitalize }}</h1>
+		<div class="org">
+            <div class="org-toc-container"></div>
+			<div class="org-content">
+                <h1>{{ file_title | capitalize }}</h1>
 				{{ file_content }}
             </div>
         </div>
