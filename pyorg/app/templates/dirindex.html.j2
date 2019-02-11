@@ -17,17 +17,17 @@
             <li class="breadcrumb-item active">{{ dirname }}</li>
         </ol></nav>
 
-		<div class="row">
-			<div class="col">
-                <h1>{{ dirname }}/</h1>
-                <ul>
+		<div class="row justify-content-center">
+			<div class="col-lg-8">
+                <div class="pyorg-dirindex">
+                    <div class="list-group-item"><h2>{{ dirname }}/</h2></div>
                     {% for dirname in dirs | sort %}
-						<li><a href="{{ dirname }}/">{{ dirname }}/</a></li>
+						<a class="directory" href="{{ dirname }}/">{{ dirname }}/</a>
                     {% endfor %}
                     {% for filename in files | sort %}
-                        <li><a href="{{ filename }}">{{ filename }}</a></li>
+                        <a class="file" href="{{ filename }}">{{ filename }}</a>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
 

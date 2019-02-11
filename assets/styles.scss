@@ -67,3 +67,18 @@ body {
     }
   }
 }
+
+
+.pyorg-dirindex {
+  @extend .list-group;
+
+  & > a {
+    @extend .list-group-item, .list-group-item-action;
+    font-size: 125%;
+
+    &:before { margin-right: 0.5em; }
+    &.directory:before { content: "📁"; }
+    &.file:before { content: "📄"; }
+  }
+
+}
