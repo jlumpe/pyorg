@@ -1,6 +1,46 @@
 """Work with org file abstract syntax trees."""
 
 
+# org-element-all-elements
+ORG_ALL_ELEMENTS = frozenset({
+	'babel-call', 'center-block', 'clock', 'comment', 'comment-block',
+	'diary-sexp', 'drawer', 'dynamic-block', 'example-block', 'export-block',
+	'fixed-width', 'footnote-definition', 'headline', 'horizontal-rule',
+	'inlinetask', 'item', 'keyword', 'latex-environment', 'node-property',
+	'paragraph', 'plain-list', 'planning', 'property-drawer', 'quote-block',
+	'section', 'special-block', 'src-block', 'table', 'table-row', 'verse-block',
+})
+
+# org-element-greater-elements
+ORG_GREATER_ELEMENTS = frozenset({
+	'center-block', 'drawer', 'dynamic-block', 'footnote-definition', 'headline',
+	'inlinetask', 'item', 'plain-list', 'property-drawer', 'quote-block',
+	'section', 'special-block', 'table',
+})
+
+# org-element-all-objects
+ORG_ALL_OBJECTS = frozenset({
+	'bold', 'code', 'entity', 'export-snippet', 'footnote-reference',
+	'inline-babel-call', 'inline-src-block', 'italic', 'line-break',
+	'latex-fragment', 'link', 'macro', 'radio-target', 'statistics-cookie',
+	'strike-through', 'subscript', 'superscript', 'table-cell', 'target',
+	'timestamp', 'underline', 'verbatim',
+})
+
+# org-element-object-containers
+ORG_OBJECT_CONTAINERS = frozenset({
+	'bold', 'footnote-reference', 'italic', 'link', 'subscript', 'radio-target',
+	'strike-through', 'superscript', 'table-cell', 'underline', 'paragraph',
+	'table-row', 'verse-block',
+})
+
+# org-element-recursive-objects
+ORG_RECURSIVE_OBJECTS = frozenset({
+	'bold', 'footnote-reference', 'italic', 'link', 'subscript', 'radio-target',
+	'strike-through', 'superscript', 'table-cell', 'underline',
+})
+
+
 class OrgElement:
 	"""An elemment (or object) in an org file.
 
