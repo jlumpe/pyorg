@@ -59,6 +59,20 @@ class OrgElement:
 	def __repr__(self):
 		return '%s(type=%r)' % (type(self).__name__, self.type)
 
+	def __len__(self):
+		return len(self.children)
+
+	def __iter__(self):
+		return iter(self.children)
+
+	def __getitem__(self, key):
+		if isinstance(key, int):
+			return self.children[key]
+		elif isinstance(key, str):
+			return self.props[key]
+		else:
+			raise TypeError('Expected str or int, got %r' % type(key))
+
 	def dump(self, index=None, indent=''):
 		"""Print a debug representation of the element and its descendants."""
 		def print_(*args):
