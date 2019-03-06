@@ -1,24 +1,18 @@
-import os
 from pathlib import Path
 
-from flask import render_template, Markup, send_file, abort, url_for, redirect
-
-from .app import app, emacs
-
-
-@app.route('/')
-def home():
-	return render_template('home.html.j2')
+from flask import (
+	Blueprint, render_template, Markup, send_file, abort, url_for, redirect,
+	current_app,
+)
 
 
-@app.route('/org/')
-def orgroot():
-	return view_org_directory('')
+pyorg_flask = Blueprint('pyorg', __name__, template_folder='templates')
 
 
-@app.route('/org/<path:path>')
-def viewfile(path):
-	if path.endswith('/'):
+@pyorg_flask.route('/files/')
+@pyorg_flask.route('/files/<path:path>')
+def viewfile(path=''):
+	if not path or path.endswith('/'):
 		return view_org_directory(path)
 
 	if path.endswith('.org'):
@@ -29,7 +23,7 @@ def viewfile(path):
 
 def view_org_file(path):
 	path = Path(path)
-	htmlfile = app.config["ORG_PUBLISH_DIR"] / path.parent / (path.stem + '.html')
+	htmlfile = current_app.config["ORG_PUBLISH_DIR"] / path.parent / (path.stem + '.html')
 
 	if not htmlfile.is_file():
 		return render_template('orgfile-404.html.j2', file=str(path)), 404
@@ -48,7 +42,7 @@ def view_org_file(path):
 
 def view_org_directory(path):
 	path = Path(path)
-	fullpath = app.config["ORG_PUBLISH_DIR"] / path
+	fullpath = current_app.config["ORG_PUBLISH_DIR"] / path
 
 	dirs = []
 	files = []
@@ -75,7 +69,7 @@ def view_org_directory(path):
 
 
 def get_other_file(filepath):
-	fullpath = Path(app.config["ORG_PUBLISH_DIR"]) / filepath
+	fullpath = Path(current_app.config["ORG_PUBLISH_DIR"]) / filepath
 
 	if not fullpath.exists():
 		abort(404)
