@@ -199,7 +199,7 @@ class OrgHtmlConverter:
 
 	@_convert_elem.register('entity')
 	def _convert_entity(self, orgelem, ctx):
-		return self.doc.makeTextNode(orgelem['html'])
+		return self.doc.createTextNode(orgelem['html'])
 
 	@_convert_elem.register('link')
 	def _convert_link(self, orgelem, ctx):
