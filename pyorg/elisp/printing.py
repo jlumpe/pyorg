@@ -46,5 +46,5 @@ def _print_quote(quote):
 
 
 @print_elisp.register(Raw)
-def _pring_raw(raw):
+def _print_raw(raw):
 	return raw.src

@@ -10,16 +10,16 @@ __all__ = ['ElispAstNode', 'Form', 'Literal', 'Symbol', 'Cons', 'List', 'Quote',
 class ElispAstNode:
 	"""Abstract base class for Elisp AST nodes."""
 
-
-class Form(ElispAstNode):
-	"""Pretty much everything is a form, right?"""
+	def __repr__(self):
+		return '<el %s>' % self
 
 	def __str__(self):
 		from .printing import print_elisp
 		return print_elisp(self)
 
-	def __repr__(self):
-		return '<el %s>' % self
+
+class Form(ElispAstNode):
+	"""Pretty much everything is a form, right?"""
 
 
 class Literal(Form):

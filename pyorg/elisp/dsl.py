@@ -38,6 +38,7 @@ class ElispSingleton:
 	Q = staticmethod(quote)
 	C = staticmethod(cons)
 	S = staticmethod(symbols)
+	R = staticmethod(Raw)
 
 
 E = ElispSingleton()
