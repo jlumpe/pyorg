@@ -1,32 +1,48 @@
 """Interface with Emacs and run commands."""
 
 import sys
+import os
 from subprocess import run, PIPE
 import json
 from ast import literal_eval
+from tempfile import TemporaryDirectory
+
 
 from .elisp import ElispAstNode, E, Raw
 
 
-def get_source(src):
-	"""Get source code from string, AST node, or sequence of these."""
-	if isinstance(src, (str, ElispAstNode)):
-		return str(src)
-
-	body = []
-	for item in src:
+def _get_forms_seq(seq):
+	forms = []
+	for item in seq:
 		if isinstance(item, str):
-			body.append(Raw(item))
+			forms.append(Raw(item))
 		elif isinstance(item, ElispAstNode):
-			body.append(item)
+			forms.append(item)
 		else:
 			raise TypeError('Sequence elements must be strings or AST nodes')
+	return forms
 
-	return str(E.progn(*body))
+
+def get_form(src):
+	"""Get Elisp form from string, AST node, or sequence of these."""
+	if isinstance(src, ElispAstNode):
+		return src
+
+	if isinstance(src, str):
+		return Raw(src)
+
+	return E.progn(*_get_forms_seq(src))
 
 
-def _print_json(source):
-	return '(princ (json-encode %s))' % source
+def get_forms_list(src):
+	"""Get source as list of forms from string, AST node, or sequence of these."""
+	if isinstance(src, ElispAstNode):
+		return [src]
+
+	if isinstance(src, str):
+		return [Raw(src)]
+
+	return _get_forms_seq(src)
 
 
 class EmacsInterface:
@@ -141,7 +157,7 @@ class EmacsInterface:
 			Command output or completed process object, depending on value of
 			``process``.
 		"""
-		source = get_source(source)
+		source = str(get_form(source))
 		result = self.run(['-eval', source], **kwargs)
 
 		if process:
@@ -149,34 +165,41 @@ class EmacsInterface:
 		else:
 			return self._getoutput(result)
 
-	def getjson(self, source, wrap=True, **kwargs):
-		"""Get parse JSON from the command's output.
+	def _result_from_stdout(self, form, **kwargs):
+		"""Get result by reading from stdout."""
+
+	def _result_from_tmpfile(self, form, **kwargs):
+		"""Get result by having Emacs write to tmp file and reading from Python."""
+		with TemporaryDirectory() as tmpdir:
+			fname = os.path.join(tmpdir, 'emacs-output')
+			el = E.with_temp_file(fname, E.insert(form))
+			self.eval(el)
+			with open(fname) as fobj:
+				return fobj.read()
+
+	def getresult(self, source, is_json=False, **kwargs):
+		"""Get parsed result from evaluating the Elisp code.
 
 		Parameters
 		----------
 		source : str or list
 			Elisp code to evaluate.
-		wrap : bool
-			If True ``source`` (or its last element if a list) will be wrapped in
-			a command to print its value to JSON. Set to False if `source` will
-			already be printing JSON.
+		is_json : bool
+			True if the result of evaluating the code is already a string of
+			JSON-encoded data.
 
 		Returns
 		-------
-		Parsed JSON value.
+		Parsed value.
 		"""
-		if isinstance(source, str):
-			source = [source]
-		else:
-			source = list(source)
+		form = get_form(source)
 
-		if wrap:
-			source[-1] = _print_json(source[-1])
+		if not is_json:
+			form = E.progn(
+				E.require(E.Q('json')),
+				E.json_encode(form)
+			)
 
-		source.insert(0, "(require 'json)")
+		result = self._result_from_tmpfile(form, **kwargs)
 
-		result = self.eval(source, **kwargs)
-		if self.is_client:
-			result = literal_eval(result)  # Why is this required?
 		return json.loads(result)
-
