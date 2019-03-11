@@ -14,9 +14,8 @@ const static_dir = './pyorg/flask/static/';
 
 const lib_files = [
     'jquery/dist/jquery.js',
-    'bootstrap/dist/js/bootstrap.js',
-    'popper.js/dist/popper.js',
-    'bootstrap/dist/js/bootstrap.js',
+    'sphinx_rtd_theme/js/modernizr.min.js',
+    'sphinx_rtd_theme/js/theme.js',
 ];
 
 function libs_concat() {
