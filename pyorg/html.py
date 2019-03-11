@@ -92,6 +92,11 @@ class OrgHtmlConverter:
 		'underline': 'u',
 	}
 
+	config = {
+		'latex_delims': ('$$', '$$'),
+		'latex_inline_delims': (r'\(', r'\)'),
+	}
+
 	def __init__(self):
 		self.doc = Document()
 
@@ -153,13 +158,13 @@ class OrgHtmlConverter:
 	def _make_headline(self, elem, ctx):
 		level = elem['level']
 
-		if not (1 <= level <= 6):
+		if not (1 <= level <= 5):
 			raise NotImplementedError()
 
 		html = self.doc.createElement('div')
 		html.attributes['class'] = 'org-header-container org-header-level-%d' % level
 
-		header = self._make_elem_default(elem, ctx, tag='h%d' % level)
+		header = self._make_elem_default(elem, ctx, tag='h%d' % (level + 1))
 		self._add_children(header, elem['title'], ctx)
 
 		html.appendChild(header)
@@ -199,7 +204,7 @@ class OrgHtmlConverter:
 
 	@_convert_elem.register('entity')
 	def _convert_entity(self, orgelem, ctx):
-		return self.doc.createTextNode(orgelem['html'])
+		return self.doc.createTextNode(orgelem['utf-8'])
 
 	@_convert_elem.register('link')
 	def _convert_link(self, orgelem, ctx):
@@ -210,11 +215,40 @@ class OrgHtmlConverter:
 			html.attributes['href'] = orgelem['path']
 			return html
 
+		if linktype == 'file':
+			return self._convert_file_link(orgelem, ctx)
+
 		return self._convert_elem_default(orgelem, ctx, tag='span',
 			text='Cant convert link of type %r!' % linktype)
 
 		raise NotImplementedError()
 
+	def _convert_file_link(self, link, ctx):
+		html = self._convert_elem_default(link, ctx)
+		html.attributes['href'] = '#'
+		return html
+
 	@_convert_elem.register('code')
 	def _convert_code(self, orgelem, ctx):
 		return self._make_elem_default(orgelem, ctx, text=orgelem['value'])
+
+	@_convert_elem.register('latex-fragment')
+	def _convert_latex_fragment(self, orgelem, ctx):
+		value = orgelem['value']
+
+		import re
+		match = re.fullmatch(r'(\$\$?|\\[[(])(.*?)(\$\$?|\\[\])])', value, re.S)
+		d1, latex, d2 = match.groups()
+
+		if d1 in ('$$', '\\['):
+			d1, d2 = self.config['latex_delims']
+			text = d1 + latex + d2
+
+		elif d1 in ('$', '\\('):
+			d1, d2 = self.config['latex_inline_delims']
+			text = d1 + latex + d2
+
+		else:
+			assert False
+
+		return self.doc.createTextNode(text)
