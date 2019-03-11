@@ -1,0 +1,35 @@
+{% extends 'base.html.j2' %}
+
+{% set body_attrs = 'class="wy-body-for-nav"' %}
+
+{% block body_content %}
+
+    <div class="wy-grid-for-nav">
+        {# Side nav #}
+		<nav class="wy-nav-side">
+			{% block sidebar %}
+                <div class="wy-side-nav-search">
+					<a class="icon icon-home" href="{{  url_for('home') }}">pyorg</a>
+                </div>
+
+                <div class="wy-menu wy-menu-vertical">
+                    {% block toc %}
+                        <p class="caption"><span class="caption-text">pyorg</span></p>
+                        <ul>
+                            <li><a href="{{ url_for('pyorg.viewfile') }}">Org directory</a></li>
+                            <li><a href="{{ url_for('pyorg.agenda') }}">Agenda</a></li>
+                        </ul>
+                    {% endblock toc %}
+                </div>
+            {% endblock sidebar %}
+		</nav>
+
+        {# Main body #}
+		<section class="wy-nav-content-wrap">
+			<div class="wy-nav-content">
+				{% block content %}{% endblock content %}
+			</div>
+		</section>
+    </div>
+
+{% endblock body_content %}

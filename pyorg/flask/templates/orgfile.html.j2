@@ -1,29 +1,41 @@
 {#  Displays exported .org file #}
 
-{% extends 'base.html.j2' %}
+{% extends 'rtd_base.html.j2' %}
 
 {% set page_title = file_name %}
 {% set depth = parents | length %}
 
 {% block content %}
-    <div class="container-fluid">
 
-        <nav><ol class="breadcrumb">
-            {% for dirname in ['root'] + (parents | list) %}
-                <li class="breadcrumb-item">
-                    <a href="./{{ '../' * (depth - loop.index0) }}">{{ dirname }}</a>
-                </li>
-            {% endfor %}
-            <li class="breadcrumb-item active">{{ file_name }}</li>
-        </ol></nav>
+	{# Breadcrumbs #}
+	<div><ul class="wy-breadcrumbs">
+		{% for dirname in ['root'] + (parents | list) %}
+			<li>
+				<a href="./{{ '../' * (depth - loop.index0) }}">{{ dirname }}</a>
+                »
+			</li>
+		{% endfor %}
+		<li>{{ file_name }}</li>
+		<hr/>
+	</ul></div>
 
-		<div class="org">
-            <div class="org-toc-container"></div>
-			<div class="org-content">
-                <h1>{{ file_title | capitalize }}</h1>
-				{{ file_content }}
-            </div>
-        </div>
+	{# Title #}
+	<h1>{{ file_title | capitalize }}</h1>
 
-    </div>
+	{# File content #}
+	<div class="org-content">
+		{{ file_content }}
+	</div>
+
 {% endblock content %}
+
+{% block toc %}
+    {{ super() }}
+
+    <p class="caption"><span class="caption-text">Document</span></p>
+    <ul>
+    {% for i in range(5) %}
+        <li><a href="#">Header {{ i+1 }}</a></li>
+    {% endfor %}
+    </ul>
+{% endblock toc %}

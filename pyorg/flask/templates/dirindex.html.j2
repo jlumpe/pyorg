@@ -1,6 +1,6 @@
 {#  Displays exported .org file #}
 
-{% extends 'base.html.j2' %}
+{% extends 'rtd_base.html.j2' %}
 
 {% set page_title = dirname %}
 {% set depth = parents | length %}
@@ -8,28 +8,28 @@
 {% block content %}
     <div class="container">
 
-        <nav><ol class="breadcrumb">
+        {# Breadcrumbs #}
+        <div><ul class="wy-breadcrumbs">
             {% for parent in parents | list %}
-                <li class="breadcrumb-item">
+                <li>
                     <a href="./{{ '../' * (depth - loop.index0) }}">{{ parent }}</a>
+                    »
                 </li>
             {% endfor %}
-            <li class="breadcrumb-item active">{{ dirname }}</li>
-        </ol></nav>
+            <li>{{ dirname }}</li>
+            <hr/>
+        </ul></div>
 
-		<div class="row justify-content-center">
-			<div class="col-lg-8">
-                <div class="pyorg-dirindex">
-                    <div class="list-group-item"><h2>{{ dirname }}/</h2></div>
-                    {% for dirname in dirs | sort %}
-						<a class="directory" href="{{ dirname }}/">{{ dirname }}/</a>
-                    {% endfor %}
-                    {% for filename in files | sort %}
-                        <a class="file" href="{{ filename }}">{{ filename }}</a>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+        <h2>{{ dirname }}/</h2>
+
+		<ul class="pyorg-dirindex">
+			{% for dirname in dirs | sort %}
+                <li class="directory"><a href="{{ dirname }}/">{{ dirname }}/</a></li>
+			{% endfor %}
+			{% for filename in files | sort %}
+				<li class="file"><a href="{{ filename }}">{{ filename }}</a></li>
+			{% endfor %}
+		</ul>
 
     </div>
 {% endblock content %}
