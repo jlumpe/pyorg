@@ -12,6 +12,16 @@ sass.compiler = require('node-sass');
 const static_dir = './pyorg/flask/static/';
 
 
+const font_files = [
+    'sphinx_rtd_theme/fonts/**/*',
+];
+
+function fonts() {
+    return src(font_files.map(f => path.join('node_modules', f)))
+        .pipe(dest(path.join(static_dir, 'fonts')));
+}
+
+
 const lib_files = [
     'jquery/dist/jquery.js',
     'sphinx_rtd_theme/js/modernizr.min.js',
@@ -53,9 +63,10 @@ function clean() {
 }
 
 
-const build = parallel(libs, compile_sass);
+const build = parallel(fonts, libs, compile_sass);
 
 
+exports.fonts = fonts;
 exports.libs = libs;
 exports.sass = compile_sass;
 exports.build = build;
