@@ -50,7 +50,7 @@ function compile_sass() {
             includePaths: ['node_modules'],
         }).on('error', sass.logError))
         .pipe(sourcemaps.write())
-        .pipe(dest(static_dir));
+        .pipe(dest(path.join(static_dir, 'styles')));
 }
 
 function watch_sass() {
