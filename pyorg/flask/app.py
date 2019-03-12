@@ -11,7 +11,10 @@ app = Flask(__package__)
 
 app.config.update(
 	ORG_DIR='/Users/student/org/',
-	ORG_PUBLISH_DIR='/Users/student/tmp/pyorg-publish',
+	ORG_FAVORITE_FILES=[
+		'topics/math.org',
+		'thesis/references.org',
+	],
 )
 
 

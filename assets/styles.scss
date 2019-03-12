@@ -4,6 +4,21 @@
 
 
 
+// Side menu
+.wy-menu-vertical {
+
+  // Collapsible menu list item
+  li.menu-collapse {
+    &.expanded {
+      @extend li.current;
+    }
+    &.expanded ul {
+      //display: block;
+    }
+  }
+}
+
+
 .org-content {
   @extend .rst-content;
 }

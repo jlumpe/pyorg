@@ -9,6 +9,14 @@ from flask import (
 pyorg_flask = Blueprint('pyorg', __name__, template_folder='templates')
 
 
+
+@pyorg_flask.context_processor
+def context_processor():
+	return dict(
+		favorite_files=current_app.config.get('ORG_FAVORITE_FILES', []),
+	)
+
+
 @pyorg_flask.route('/files/')
 @pyorg_flask.route('/files/<path:path>')
 def viewfile(path=''):

@@ -1,3 +1,6 @@
+{# Base template for RTD theme layout -#}
+
+
 {% extends 'base.html.j2' %}
 
 {% set body_attrs = 'class="wy-body-for-nav"' %}
@@ -14,11 +17,31 @@
 
                 <div class="wy-menu wy-menu-vertical">
                     {% block toc %}
+
+                        {# Top-level links #}
                         <p class="caption"><span class="caption-text">pyorg</span></p>
                         <ul>
                             <li><a href="{{ url_for('pyorg.viewfile') }}">Org directory</a></li>
                             <li><a href="{{ url_for('pyorg.agenda') }}">Agenda</a></li>
-                        </ul>
+
+							{# Favorite files #}
+							{% if favorite_files %}
+							<li class="toctree-l1 menu-collapse">
+								<a class="reference" href="#">
+									<span class="toctree-expand"></span>
+									Favorites
+								</a>
+								<ul>
+									{% for file in favorite_files %}
+									<li class="toctree-l2">
+										<a class="reference" href="{{ url_for('pyorg.viewfile', path=file) }}">{{ file }}</a>
+									</li>
+									{% endfor %}
+								</ul>
+                            </li>
+                            {% endif %}
+						</ul>
+
                     {% endblock toc %}
                 </div>
             {% endblock sidebar %}
