@@ -43,6 +43,19 @@ function libs_mathjax() {
 const libs = parallel(libs_concat, libs_mathjax);
 
 
+
+function scripts() {
+    return src('./assets/**/*.js')
+        .pipe(concat('app.js'))
+        .pipe(dest(static_dir));
+}
+
+
+function watch_scripts() {
+    watch('./assets/**/*.js', scripts);
+}
+
+
 function compile_sass() {
     return src('./assets/**/*.scss')
         .pipe(sourcemaps.init())
@@ -63,13 +76,14 @@ function clean() {
 }
 
 
-const build = parallel(fonts, libs, compile_sass);
+const build = parallel(fonts, libs, scripts, compile_sass);
 
 
 exports.fonts = fonts;
 exports.libs = libs;
+exports.scripts = scripts;
 exports.sass = compile_sass;
 exports.build = build;
 exports.clean = clean;
-exports.watch = watch_sass;
+exports.watch = parallel(watch_scripts, watch_sass);
 exports.default = series(clean, build);

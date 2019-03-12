@@ -1,4 +1,4 @@
-{# A skeleton for all application pages #}
+{# A skeleton for all application pages -#}
 
 <!DOCTYPE HTML>
 <html {% block html_attrs %}{% endblock html_attrs %}>
@@ -42,6 +42,7 @@
 			<!-- js -->
             <script type="text/javascript" src="{{ url_for('static', filename='lib/MathJax/MathJax.js') }}?config=TeX-AMS_HTML-full"></script>
             <script type="text/javascript" src="{{ url_for('static', filename='lib/libs.js') }}"></script>
+            <script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
 
 			<!-- Site-wide CSS -->
             <link rel="stylesheet" href="{{ url_for('static', filename='styles/styles.css') }}"/>
