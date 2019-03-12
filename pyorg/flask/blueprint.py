@@ -48,6 +48,9 @@ def view_org_directory(path):
 	files = []
 
 	for item in fullpath.iterdir():
+		if item.name.startswith('.'):
+			continue
+
 		if item.is_dir():
 			dirs.append(item.name)
 
