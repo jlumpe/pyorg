@@ -5,10 +5,40 @@
 
 
 .org-content {
+  @extend .rst-content;
 }
 
 
 .org-tag {
+}
+
+
+$org-error-font-color: $danger;
+
+
+.org-element {
+
+  &.org-eltype-link {
+    &.org-link-raw {
+      font-family: monospace;
+    }
+    &.org-error {
+      color: $org-error-font-color;
+    }
+  }
+
+  &.org-eltype-src-block {
+    & > .org-src-block-value {
+      @extend pre.literal-block;
+    }
+  }
+
+}
+
+
+.org-error-msg {
+  @extend .wy-alert;
+  @extend .wy-alert.wy-alert-danger;
 }
 
 

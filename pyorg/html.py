@@ -20,7 +20,7 @@ def add_class(elem, class_):
 		class_ = ' '.join(class_)
 
 	if 'class' in elem.attributes:
-		elem.attributes['class'] += ' ' + class_
+		elem.attributes['class'] = elem.attributes['class'].value + ' ' + class_
 	else:
 		elem.attributes['class'] = class_
 
@@ -78,6 +78,7 @@ def dispatch_eltype(parent=None):
 class OrgHtmlConverter:
 
 	TAGS = {
+		'org-data': 'div',
 		'item': 'li',
 		'paragraph': 'p',
 		'bold': 'strong',
@@ -85,11 +86,12 @@ class OrgHtmlConverter:
 		'example-block': 'pre',
 		'italic': 'em',
 		'link': 'a',
-		'src-block': 'pre',
 		'strike-through': 's',
 		'superscript': 'sup',
 		'subscript': 'sub',
 		'underline': 'u',
+		'section': 'div',
+		'comment': None,
 	}
 
 	config = {
@@ -130,15 +132,29 @@ class OrgHtmlConverter:
 		if text is not None:
 			html.appendChild(self.doc.createTextNode(text))
 		if attrs is not None:
-			html.attributes.update(attrs)
+			for key, value in attrs.items():
+				html.attributes[key] = value
 		return html
 
 	def _make_elem_default(self, orgelem, ctx, tag=None, **kwargs):
+		no_default = False
+
 		if tag is None:
 			tag = self.default_tag(orgelem.type)
+			if orgelem.type not in self.TAGS:
+				no_default = True
+
+			if tag is None:
+				return None
 
 		html = self._make_elem_base(tag, **kwargs)
 		add_class(html, 'org-element org-eltype-%s' % orgelem.type)
+
+		# Warn about no default tag
+		if no_default:
+			msg = "Don't know how to convert element of type %r" % orgelem.type
+			self._add_error(html)
+			html.appendChild(self._make_error_msg(msg))
 
 		return html
 
@@ -152,7 +168,8 @@ class OrgHtmlConverter:
 		"""Recursively _convert org elements and add to parent html element."""
 		for oelem in org_elems:
 			html = self._convert(oelem, ctx)
-			parent.appendChild(html)
+			if html is not None:
+				parent.appendChild(html)
 
 	@_make_elem.register('headline')
 	def _make_headline(self, elem, ctx):
@@ -202,30 +219,42 @@ class OrgHtmlConverter:
 
 		return dlist
 
+	def _add_error(self, html, text=None):
+		"""Add error state to a converted HTML element."""
+		add_class(html, 'org-error')
+		if text:
+			html.attributes['title'] = text
+
+	def _make_error_msg(self, msg, tag='div'):
+		return self._make_elem_base(tag, text=msg, attrs={'class': 'org-error-msg'})
+
 	@_convert_elem.register('entity')
 	def _convert_entity(self, orgelem, ctx):
 		return self.doc.createTextNode(orgelem['utf-8'])
+
+	def _convert_link_default(self, orgelem, ctx, url='#'):
+		html = self._make_elem_default(orgelem, ctx)
+
+		# Add contents (these come from description part of link)
+		if orgelem.contents:
+			self._add_children(html, orgelem.contents, ctx)
+		else:
+			# No contents (no description), use raw-link
+			html.appendChild(self.doc.createTextNode(orgelem['raw-link']))
+			add_class(html, 'org-link-raw')
+
+		html.attributes['href'] = url
+		return html
 
 	@_convert_elem.register('link')
 	def _convert_link(self, orgelem, ctx):
 		linktype = orgelem['type']
 
 		if linktype in ('http', 'https'):
-			html = self._convert_elem_default(orgelem, ctx)
-			html.attributes['href'] = orgelem['path']
-			return html
+			return self._convert_link_default(orgelem, ctx, url=orgelem['path'])
 
-		if linktype == 'file':
-			return self._convert_file_link(orgelem, ctx)
-
-		return self._convert_elem_default(orgelem, ctx, tag='span',
-			text='Cant convert link of type %r!' % linktype)
-
-		raise NotImplementedError()
-
-	def _convert_file_link(self, link, ctx):
-		html = self._convert_elem_default(link, ctx)
-		html.attributes['href'] = '#'
+		html = self._convert_link_default(orgelem, ctx)
+		self._add_error(html, text="Can't convert link of type %r!" % linktype)
 		return html
 
 	@_convert_elem.register('code')
@@ -252,3 +281,17 @@ class OrgHtmlConverter:
 			assert False
 
 		return self.doc.createTextNode(text)
+
+	@_convert_elem.register('src-block')
+	def _convert_src_block(self, orgelem, ctx):
+		html = self._make_elem_default(orgelem, ctx, tag='div')
+
+		# Source code in "value" property
+		code = self._make_elem_base('pre', text=orgelem['value'])
+		add_class(code, 'org-src-block-value')
+		html.appendChild(code)
+
+		# The contents are the results of executing the block?
+		self._add_children(html, orgelem.contents, ctx)
+
+		return html
