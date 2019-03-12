@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from flask import (
 	Blueprint, render_template, Markup, send_file, abort, url_for, redirect,
@@ -31,26 +32,41 @@ def viewfile(path=''):
 
 def view_org_file(path):
 	path = Path(path)
-	htmlfile = current_app.config["ORG_PUBLISH_DIR"] / path.parent / (path.stem + '.html')
+	orgfile = current_app.config["ORG_DIR"] / path
 
-	if not htmlfile.is_file():
+	if not orgfile.is_file():
 		return render_template('orgfile-404.html.j2', file=str(path)), 404
 
-	with htmlfile.open() as fh:
-		content = Markup(fh.read())
+	from pyorg.elisp import E
+	from .app import emacs
+	el = E.with_current_buffer(
+		E.find_file_noselect(str(orgfile.absolute())),
+		E.org_json_encode_element(E.org_element_parse_buffer())
+	)
+	result = emacs.getresult(el, encode=False)
+
+	from pyorg.ast import org_elem_from_json
+	data = json.loads(result)
+	content = org_elem_from_json(data)
+
+	from pyorg.html import OrgHtmlConverter
+	converter = OrgHtmlConverter()
+
+	html = Markup(converter.convert(content).toprettyxml())
 
 	return render_template(
 		'orgfile.html.j2',
-		file_content=content,
+		file_content=html,
 		file_name=path.name,
 		file_title=path.stem,
 		parents=path.parent.parts,
+		source_json=json.dumps(data, indent=4, sort_keys=True),
 	)
 
 
 def view_org_directory(path):
 	path = Path(path)
-	fullpath = current_app.config["ORG_PUBLISH_DIR"] / path
+	fullpath = current_app.config["ORG_DIR"] / path
 
 	dirs = []
 	files = []
@@ -62,8 +78,8 @@ def view_org_directory(path):
 		if item.is_dir():
 			dirs.append(item.name)
 
-		if item.is_file() and item.name.endswith('.html'):
-			files.append(item.stem + '.org')
+		if item.is_file() and item.name.endswith('.org'):
+			files.append(item.name)
 
 	*parents, dirname = ['root', *path.parts]
 
@@ -80,7 +96,7 @@ def view_org_directory(path):
 
 
 def get_other_file(filepath):
-	fullpath = Path(current_app.config["ORG_PUBLISH_DIR"]) / filepath
+	fullpath = Path(current_app.config["ORG_DIR"]) / filepath
 
 	if not fullpath.exists():
 		abort(404)
