@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/jlumpe/pyorg#readme",
   "dependencies": {
+    "bootstrap": "^4.3.1",
     "jquery": "^3.3.1",
     "mathjax": "^2.7.5",
     "sphinx_rtd_theme": "^0.4.2",
