@@ -1,0 +1,42 @@
+{# Displays agenda #}
+
+{% extends 'base.html.j2' %}
+
+{% set page_title = 'Agenda' %}
+
+
+{% block content %}
+    <div class="container">
+        <h1>Agenda</h1>
+
+        <table class="agenda-table">
+            <thead><tr>
+                <th>File</th>
+                <th>Heading</th>
+                <th>Priority</th>
+                <th>Text</th>
+                <th>Tags</th>
+            </tr></thead>
+            <tbody>
+                {% for item in items %}
+                    {% set priority = item['priority-letter'] %}
+                    <tr>
+                    {% if loop.first or item['file-relative'] != loop.previtem['file-relative'] %}
+                        <td>{{ item['file-relative'] }}</td>
+                    {% else %}<td></td>{% endif %}
+                        <td>{{ item['path'][:-1] | join('/') }}</td>
+                        <td class="text-center">{%  if priority %}
+                            <span class="org-agenda-priority priority-{{ priority }}">{{ priority }}</span>
+                        {% endif %}</td>
+                        <td>{{ item['txt'] }}</td>
+                        <td>
+                            {% for tag in (item['tags'] or '').split(':') %}
+                                <span class="org-tag">{{ tag }}</span>
+							{% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock content %}

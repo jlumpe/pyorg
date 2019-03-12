@@ -67,3 +67,29 @@ $org-error-font-color: $danger;
   }
 
 }
+
+
+table.agenda-table {
+  font-size: 75%;
+}
+
+
+@mixin priority-letter($color) {
+  color: $color;
+  border-color: $color;
+  background-color: tint($color, 50%);
+}
+
+.org-agenda-priority {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+
+  font-weight: bold;
+  border: 1px solid;
+  border-radius: .25em;
+
+  &.priority-A { @include priority-letter(#FF0000); }
+  &.priority-B { @include priority-letter(#FF9900); }
+  &.priority-C { @include priority-letter(#99FF00); }
+}

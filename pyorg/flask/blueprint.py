@@ -105,3 +105,22 @@ def get_other_file(filepath):
 		return redirect(url_for('viewfile', path=filepath + '/'))
 
 	return send_file(str(fullpath))
+
+
+@pyorg_flask.route('/agenda')
+def agenda():
+
+	from pyorg.elisp import E
+	from .app import emacs
+	el = E.org_json_with_agenda_buffer('t',
+		E.org_json_encode_agenda_buffer()
+	)
+	result = emacs.getresult(el, encode=False)
+	data = json.loads(result)
+
+	data.sort(key=lambda item: (item['file-relative'], *item['path']))
+
+	return render_template(
+		'agenda.html.j2',
+		items=data,
+	)
