@@ -41,13 +41,13 @@ def view_org_file(path):
 	from .app import emacs
 	el = E.with_current_buffer(
 		E.find_file_noselect(str(orgfile.absolute())),
-		E.org_json_encode_element(E.org_element_parse_buffer())
+		E.org_json_encode_node(E.org_element_parse_buffer())
 	)
 	result = emacs.getresult(el, encode=False)
 
-	from pyorg.ast import org_elem_from_json
+	from pyorg.ast import org_node_from_json
 	data = json.loads(result)
-	content = org_elem_from_json(data)
+	content = org_node_from_json(data)
 
 	from pyorg.html import OrgHtmlConverter
 	converter = OrgHtmlConverter()

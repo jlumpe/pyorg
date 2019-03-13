@@ -31,9 +31,9 @@
 $org-error-font-color: $danger;
 
 
-.org-element {
+.org-node {
 
-  &.org-eltype-link {
+  &.org-nodetype-link {
     &.org-link-raw {
       font-family: monospace;
     }
@@ -42,7 +42,7 @@ $org-error-font-color: $danger;
     }
   }
 
-  &.org-eltype-src-block {
+  &.org-nodetype-src-block {
     & > .org-src-block-value {
       @extend pre.literal-block;
     }

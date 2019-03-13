@@ -1,4 +1,4 @@
-"""Export org mode AST elements to HTML."""
+"""Export org mode AST nodes to HTML."""
 
 from collections import ChainMap
 from xml.dom.minidom import Document
@@ -25,7 +25,7 @@ def add_class(elem, class_):
 		elem.attributes['class'] = class_
 
 
-class DispatchEltype:
+class DispatchNodeType:
 
 	def __init__(self, default, registry=None, instance=None):
 		self.default = default
@@ -33,25 +33,25 @@ class DispatchEltype:
 		self.instance = instance
 
 	def bind(self, instance):
-		return DispatchEltype(self.default, self.registry, instance)
+		return DispatchNodeType(self.default, self.registry, instance)
 
 	def unbind(self):
-		return DispatchEltype(self.default, self.registry, None)
+		return DispatchNodeType(self.default, self.registry, None)
 
 	def __get__(self, instance, owner):
 		if instance is None:
 			return self
 		return self.bind(instance)
 
-	def dispatch(self, eltype):
-		method = self.registry.get(eltype, self.default)
+	def dispatch(self, type_):
+		method = self.registry.get(type_, self.default)
 		if self.instance is not None:
 			method.__get__(self.instance, type(self.instance))
 		return method
 
-	def register(self, eltype):
+	def register(self, type_):
 		def decorator(method):
-			self.registry[eltype] = method
+			self.registry[type_] = method
 			return method
 
 		return decorator
@@ -61,22 +61,23 @@ class DispatchEltype:
 			return self._call(self.instance, *args, **kwargs)
 		return self._call(*args, **kwargs)
 
-	def _call(self, instance, element, *args, **kwargs):
-		method = self.dispatch(element.type)
-		return method(instance, element, *args, **kwargs)
+	def _call(self, instance, node, *args, **kwargs):
+		method = self.dispatch(node.type)
+		return method(instance, node, *args, **kwargs)
 
 
-def dispatch_eltype(parent=None):
+def dispatch_node_type(parent=None):
 	registry = {} if parent is None else ChainMap(parent, {})
 
 	def decorator(default):
-		return DispatchEltype(default, registry)
+		return DispatchNodeType(default, registry)
 
 	return decorator
 
 
 class OrgHtmlConverter:
 
+	# Default HTML tag for each node type. None means to skip.
 	TAGS = {
 		'org-data': 'div',
 		'item': 'li',
@@ -102,29 +103,29 @@ class OrgHtmlConverter:
 	def __init__(self):
 		self.doc = Document()
 
-	def default_tag(self, eltype):
+	def default_tag(self, type_):
 		try:
-			return self.TAGS[eltype]
+			return self.TAGS[type_]
 		except KeyError:
-			return 'span' if eltype in ORG_ALL_OBJECTS else 'div'
+			return 'span' if type_ in ORG_ALL_OBJECTS else 'div'
 
 	def convert(self, what):
 		return self._convert(what, None)
 
 	def _convert(self, what, ctx):
-		"""Convert an org element OR text to HTML element."""
+		"""Convert an org AST node OR text to HTML element."""
 		if isinstance(what, str):
 			return self.doc.createTextNode(what)
 		else:
-			return self._convert_elem(what, ctx)
+			return self._convert_node(what, ctx)
 
-	def _convert_elem_default(self, orgelem, ctx, **kwargs):
-		html = self._make_elem(orgelem, ctx, **kwargs)
-		self._add_children(html, orgelem.contents, ctx)
+	def _convert_node_default(self, node, ctx, **kwargs):
+		html = self._make_elem(node, ctx, **kwargs)
+		self._add_children(html, node.contents, ctx)
 		return html
 
-	_convert_elem = dispatch_eltype()(_convert_elem_default)
-	_convert_elem.__doc__ = """Recursively _convert an org element to HTML."""
+	_convert_node = dispatch_node_type()(_convert_node_default)
+	_convert_node.__doc__ = """Recursively _convert an org AST node to HTML."""
 
 	def _make_elem_base(self, tag, text=None, attrs=None):
 		"""Create a new HTML element."""
@@ -136,44 +137,44 @@ class OrgHtmlConverter:
 				html.attributes[key] = value
 		return html
 
-	def _make_elem_default(self, orgelem, ctx, tag=None, **kwargs):
+	def _make_elem_default(self, node, ctx, tag=None, **kwargs):
 		no_default = False
 
 		if tag is None:
-			tag = self.default_tag(orgelem.type)
-			if orgelem.type not in self.TAGS:
+			tag = self.default_tag(node.type)
+			if node.type not in self.TAGS:
 				no_default = True
 
 			if tag is None:
 				return None
 
 		html = self._make_elem_base(tag, **kwargs)
-		add_class(html, 'org-element org-eltype-%s' % orgelem.type)
+		add_class(html, 'org-node org-node-type-%s' % node.type)
 
 		# Warn about no default tag
 		if no_default:
-			msg = "Don't know how to convert element of type %r" % orgelem.type
+			msg = "Don't know how to convert node of type %r" % node.type
 			self._add_error(html)
 			html.appendChild(self._make_error_msg(msg))
 
 		return html
 
-	_make_elem = dispatch_eltype()(_make_elem_default)
+	_make_elem = dispatch_node_type()(_make_elem_default)
 	_make_elem.__doc__ = """
-	Make the HTML element for a given org element (but do not recurse to
+	Make the HTML element for a given org node (but do not recurse to
 	children).
 	"""
 
-	def _add_children(self, parent, org_elems, ctx):
-		"""Recursively _convert org elements and add to parent html element."""
-		for oelem in org_elems:
-			html = self._convert(oelem, ctx)
+	def _add_children(self, parent, org_nodes, ctx):
+		"""Recursively _convert org AST nodes and add to parent html element."""
+		for node in org_nodes:
+			html = self._convert(node, ctx)
 			if html is not None:
 				parent.appendChild(html)
 
 	@_make_elem.register('headline')
-	def _make_headline(self, elem, ctx):
-		level = elem['level']
+	def _make_headline(self, node, ctx):
+		level = node['level']
 
 		if not (1 <= level <= 5):
 			raise NotImplementedError()
@@ -181,40 +182,40 @@ class OrgHtmlConverter:
 		html = self.doc.createElement('div')
 		html.attributes['class'] = 'org-header-container org-header-level-%d' % level
 
-		header = self._make_elem_default(elem, ctx, tag='h%d' % (level + 1))
-		self._add_children(header, elem['title'], ctx)
+		header = self._make_elem_default(node, ctx, tag='h%d' % (level + 1))
+		self._add_children(header, node['title'], ctx)
 
 		html.appendChild(header)
 
 		return html
 
-	@_convert_elem.register('plain-list')
-	def _convert_plain_list(self, orgelem, ctx):
-		listtype = orgelem['type']
+	@_convert_node.register('plain-list')
+	def _convert_plain_list(self, node, ctx):
+		listtype = node['type']
 
 		if listtype == 'ordered':
 			tag = 'ol'
 		elif listtype == 'unordered':
 			tag = 'ul'
 		elif listtype == 'descriptive':
-			return self._convert_dlist(orgelem, ctx)
+			return self._convert_dlist(node, ctx)
 		else:
 			assert False
 
-		return self._convert_elem_default(orgelem, ctx, tag=tag)
+		return self._convert_node_default(node, ctx, tag=tag)
 
-	def _convert_dlist(self, orgelem, ctx):
+	def _convert_dlist(self, node, ctx):
 		"""Convert a description list."""
-		dlist = self._make_elem_default(orgelem, ctx, tag='dl')
+		dlist = self._make_elem_default(node, ctx, tag='dl')
 
-		for item in orgelem.children:
+		for item in node.children:
 			assert item.type == 'item'
 
 			tag = self._make_elem_base('dt')
 			self._add_children(tag, item['tag'], ctx)
 			dlist.appendChild(tag)
 
-			data = self._convert_elem_default(item, ctx, tag='dd')
+			data = self._convert_node_default(item, ctx, tag='dd')
 			dlist.appendChild(data)
 
 		return dlist
@@ -228,42 +229,42 @@ class OrgHtmlConverter:
 	def _make_error_msg(self, msg, tag='div'):
 		return self._make_elem_base(tag, text=msg, attrs={'class': 'org-error-msg'})
 
-	@_convert_elem.register('entity')
-	def _convert_entity(self, orgelem, ctx):
-		return self.doc.createTextNode(orgelem['utf-8'])
+	@_convert_node.register('entity')
+	def _convert_entity(self, node, ctx):
+		return self.doc.createTextNode(node['utf-8'])
 
-	def _convert_link_default(self, orgelem, ctx, url='#'):
-		html = self._make_elem_default(orgelem, ctx)
+	def _convert_link_default(self, node, ctx, url='#'):
+		html = self._make_elem_default(node, ctx)
 
 		# Add contents (these come from description part of link)
-		if orgelem.contents:
-			self._add_children(html, orgelem.contents, ctx)
+		if node.contents:
+			self._add_children(html, node.contents, ctx)
 		else:
 			# No contents (no description), use raw-link
-			html.appendChild(self.doc.createTextNode(orgelem['raw-link']))
+			html.appendChild(self.doc.createTextNode(node['raw-link']))
 			add_class(html, 'org-link-raw')
 
 		html.attributes['href'] = url
 		return html
 
-	@_convert_elem.register('link')
-	def _convert_link(self, orgelem, ctx):
-		linktype = orgelem['type']
+	@_convert_node.register('link')
+	def _convert_link(self, node, ctx):
+		linktype = node['type']
 
 		if linktype in ('http', 'https'):
-			return self._convert_link_default(orgelem, ctx, url=orgelem['path'])
+			return self._convert_link_default(node, ctx, url=node['path'])
 
-		html = self._convert_link_default(orgelem, ctx)
+		html = self._convert_link_default(node, ctx)
 		self._add_error(html, text="Can't convert link of type %r!" % linktype)
 		return html
 
-	@_convert_elem.register('code')
-	def _convert_code(self, orgelem, ctx):
-		return self._make_elem_default(orgelem, ctx, text=orgelem['value'])
+	@_convert_node.register('code')
+	def _convert_code(self, node, ctx):
+		return self._make_elem_default(node, ctx, text=node['value'])
 
-	@_convert_elem.register('latex-fragment')
-	def _convert_latex_fragment(self, orgelem, ctx):
-		value = orgelem['value']
+	@_convert_node.register('latex-fragment')
+	def _convert_latex_fragment(self, node, ctx):
+		value = node['value']
 
 		import re
 		match = re.fullmatch(r'(\$\$?|\\[[(])(.*?)(\$\$?|\\[\])])', value, re.S)
@@ -282,16 +283,16 @@ class OrgHtmlConverter:
 
 		return self.doc.createTextNode(text)
 
-	@_convert_elem.register('src-block')
-	def _convert_src_block(self, orgelem, ctx):
-		html = self._make_elem_default(orgelem, ctx, tag='div')
+	@_convert_node.register('src-block')
+	def _convert_src_block(self, node, ctx):
+		html = self._make_elem_default(node, ctx, tag='div')
 
 		# Source code in "value" property
-		code = self._make_elem_base('pre', text=orgelem['value'])
+		code = self._make_elem_base('pre', text=node['value'])
 		add_class(code, 'org-src-block-value')
 		html.appendChild(code)
 
 		# The contents are the results of executing the block?
-		self._add_children(html, orgelem.contents, ctx)
+		self._add_children(html, node.contents, ctx)
 
 		return html
