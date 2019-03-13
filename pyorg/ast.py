@@ -145,3 +145,21 @@ def org_node_from_json(data):
 	contents = list(map(_from_json, data['contents']))
 
 	return OrgNode(type_, props, contents, keywords)
+
+
+def get_document_title(org_data):
+	"""Get the title of a top-level AST node.
+
+	Parameters
+	----------
+	org_data: .OrgNode
+		Root AST node of type "org-data".
+
+	Returns
+	str
+		Title if document has one, otherwise None.
+	"""
+	section = org_data.contents[0]
+	assert section.type == 'section'
+
+	return section.keywords.get('TITLE')

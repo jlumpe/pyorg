@@ -52,7 +52,7 @@ def view_org_file(path):
 	)
 	result = emacs.getresult(el, encode=False)
 
-	from pyorg.ast import org_node_from_json
+	from pyorg.ast import org_node_from_json, get_document_title
 	data = json.loads(result)
 	content = org_node_from_json(data)
 
@@ -66,7 +66,7 @@ def view_org_file(path):
 		ast=content,
 		file_content=html,
 		file_name=path.name,
-		file_title=path.stem,
+		file_title=get_document_title(content) or path.stem,
 		parents=path.parent.parts,
 		source_json=json.dumps(data, indent=4, sort_keys=True),
 	)
