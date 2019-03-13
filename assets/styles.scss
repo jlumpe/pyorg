@@ -59,7 +59,7 @@ $org-error-font-color: $danger;
 
 .org-node {
 
-  &.org-nodetype-link {
+  &.org-link {
     &.org-link-raw {
       font-family: monospace;
     }
@@ -68,36 +68,36 @@ $org-error-font-color: $danger;
     }
   }
 
-  &.org-nodetype-src-block {
+  &.org-src-block {
     & > .org-src-block-value {
       @extend %code-block-base;
     }
   }
 
-  &.org-nodetype-center-block {
+  &.org-center-block {
     text-align: center;
   }
 
 
-  &.org-nodetype-verbatim {
+  &.org-verbatim {
     font-family: monospace;
   }
 
-  &.org-nodetype-code {
+  &.org-code {
     @extend code.literal;
   }
 
-  &.org-nodetype-example-block {
+  &.org-example-block {
     @extend %code-block-base;
   }
 
-  &.org-nodetype-table {
+  &.org-table {
     @extend .docutils;
   }
 }
 
 // Headline stuff
-.org-nodetype-headline > * {
+.org-headline > * {
   vertical-align: middle;
 }
 
@@ -129,7 +129,7 @@ $org-error-font-color: $danger;
   &.org-todo-priority-B { background-color: #f28d3d;}
 }
 
-.org-nodetype-headline > .org-tags {
+.org-headline > .org-tags {
   float: right;
 }
 

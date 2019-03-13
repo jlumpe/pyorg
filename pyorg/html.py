@@ -163,7 +163,7 @@ class OrgHtmlConverter:
 				return None
 
 		html = self._make_elem_base(tag, **kwargs)
-		add_class(html, 'org-node org-nodetype-%s' % node.type)
+		add_class(html, 'org-node org-%s' % node.type)
 
 		# Warn about no default tag
 		if no_default:
