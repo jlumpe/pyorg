@@ -84,15 +84,19 @@ class OrgHtmlConverter:
 		'paragraph': 'p',
 		'bold': 'strong',
 		'code': 'code',
-		'example-block': 'pre',
 		'italic': 'em',
 		'link': 'a',
 		'strike-through': 's',
+		'verbatim': 'span',
 		'superscript': 'sup',
 		'subscript': 'sub',
 		'underline': 'u',
 		'section': 'div',
 		'comment': None,
+		'example-block': 'pre',
+		'quote-block': 'blockquote',
+		'verse-block': 'p',
+		'center-block': 'div',  # Contains paragraph node?
 	}
 
 	DEFAULT_CONFIG = {
@@ -133,7 +137,7 @@ class OrgHtmlConverter:
 	_convert_node = dispatch_node_type()(_convert_node_default)
 	_convert_node.__doc__ = """Recursively _convert an org AST node to HTML."""
 
-	def _make_elem_base(self, tag, text=None, attrs=None):
+	def _make_elem_base(self, tag, text=None, attrs=None, classes=None):
 		"""Create a new HTML element."""
 		html = self.doc.createElement(tag)
 		if text is not None:
@@ -141,6 +145,10 @@ class OrgHtmlConverter:
 		if attrs is not None:
 			for key, value in attrs.items():
 				html.attributes[key] = value
+		if classes is not None:
+			if not isinstance(classes, str):
+				classes = ' '.join(classes)
+			html.attributes['class'] = classes
 		return html
 
 	def _make_elem_default(self, node, ctx, tag=None, **kwargs):
@@ -155,7 +163,7 @@ class OrgHtmlConverter:
 				return None
 
 		html = self._make_elem_base(tag, **kwargs)
-		add_class(html, 'org-node org-node-type-%s' % node.type)
+		add_class(html, 'org-node org-nodetype-%s' % node.type)
 
 		# Warn about no default tag
 		if no_default:
@@ -189,9 +197,52 @@ class OrgHtmlConverter:
 		html.attributes['class'] = 'org-header-container org-header-level-%d' % level
 
 		header = self._make_elem_default(node, ctx, tag='h%d' % (level + 1))
-		self._add_children(header, node['title'], ctx)
-
 		html.appendChild(header)
+
+		# TODO info
+		todo_type = node.props['todo-type']
+
+		if todo_type:
+			todo_kw = node.props['todo-keyword']
+
+			add_class(html, 'org-has-todo')
+			add_class(html, 'org-todo-%s' % todo_type)
+			add_class(html, 'org-todo-kw-%s' % todo_kw)
+
+			header.appendChild(self._make_elem_base(
+				'span',
+				text=todo_kw,
+				classes='org-todo org-todo-%s' % todo_type,
+			))
+
+			priority_code = node.props['priority']
+
+			if priority_code is not None:
+				priority_char = chr(priority_code)
+				header.appendChild(self._make_elem_base(
+					'span',
+					text=priority_char,
+					classes='org-todo-priority org-todo-priority-%s' % priority_char,
+				))
+
+		# Text
+		header_text = self._make_elem_base('span', classes='org-header-text')
+		self._add_children(header_text, node['title'], ctx)
+		header.appendChild(header_text)
+
+		# Tags
+		tags = node.props['tags']
+		if tags:
+			tags_elem = self._make_elem_base('span', classes='org-tags')
+
+			for tag in tags:
+				tags_elem.appendChild(self._make_elem_base(
+					'span',
+					text=tag,
+					classes='org-tag',
+				))
+
+			header.appendChild(tags_elem)
 
 		return html
 
@@ -233,7 +284,7 @@ class OrgHtmlConverter:
 			html.attributes['title'] = text
 
 	def _make_error_msg(self, msg, tag='div'):
-		return self._make_elem_base(tag, text=msg, attrs={'class': 'org-error-msg'})
+		return self._make_elem_base(tag, text=msg, classes='org-error-msg')
 
 	@_convert_node.register('entity')
 	def _convert_entity(self, node, ctx):
@@ -302,3 +353,60 @@ class OrgHtmlConverter:
 		self._add_children(html, node.contents, ctx)
 
 		return html
+
+	@_convert_node.register('verbatim')
+	@_convert_node.register('example-block')
+	def _convert_node_with_value(self, node, ctx):
+		"""Convert a node with "value" property that should be its text content."""
+		value = node.props['value']
+		assert isinstance(value, str)
+		html = self._make_elem_default(node, ctx)
+		html.appendChild(self.doc.createTextNode(value))
+		return html
+
+	@_convert_node.register('line-break')
+	def _convert_line_break(self, node, ctx):
+		return self._make_elem_base('br')
+
+	@_convert_node.register('table')
+	def _convert_table(self, node, ctx):
+		# Divide rows into "blocks", separated by rule rows
+		# These will be thead and tbody elements
+
+		current_block = []
+		blocks = [current_block]
+
+		for row in node.contents:
+			assert row.type == 'table-row'
+
+			if row.props['type'] == 'rule':
+				# New block
+				current_block = []
+				blocks.append(current_block)
+
+			else:
+				current_block.append(row.contents)
+
+		# Now convert
+		table_elem = self._make_elem_default(node, ctx, tag='table')
+
+		for i, block in enumerate(blocks):
+			# Interpret first block as header, unless its the only one
+			is_head = i == 0 and len(blocks) > 1
+
+			block_elem = self._make_elem_base('thead' if is_head else 'tbody')
+			table_elem.appendChild(block_elem)
+
+			for row in block:
+				row_elem = self._make_elem_base('tr')
+				block_elem.appendChild(row_elem)
+
+				for cell in row:
+					assert cell.type == 'table-cell'
+
+					cell_elem = self._make_elem_base('th' if is_head else 'td')
+					row_elem.appendChild(cell_elem)
+
+					self._add_children(cell_elem, cell.contents, ctx)
+
+		return table_elem
