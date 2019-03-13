@@ -95,13 +95,19 @@ class OrgHtmlConverter:
 		'comment': None,
 	}
 
-	config = {
+	DEFAULT_CONFIG = {
 		'latex_delims': ('$$', '$$'),
 		'latex_inline_delims': (r'\(', r'\)'),
 	}
 
-	def __init__(self):
+	def __init__(self, config=None, **kw):
 		self.doc = Document()
+
+		if config is None:
+			config = {}
+		if kw:
+			config = {**config, **kw}
+		self.config = ChainMap(self.DEFAULT_CONFIG, config)
 
 	def default_tag(self, type_):
 		try:
