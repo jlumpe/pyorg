@@ -93,3 +93,53 @@ table.agenda-table {
   &.priority-B { @include priority-letter(#FF9900); }
   &.priority-C { @include priority-letter(#99FF00); }
 }
+
+
+$org-ast-border-color: lightgray;
+$org-ast-properties-border-color: lightblue;
+$org-ast-properties-background-color: #e7f4f9;
+
+
+.org-ast-node {
+  border: 1px solid $org-ast-border-color;
+  padding: 5px;
+
+  & > :not(last-child), & > org-ast-contents > :not(last-child) {
+    margin-bottom: 15px;
+  }
+
+  & > .org-ast-properties {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+
+    & >  .org-ast-property-pair {
+      display: table-row;
+
+      & > * {
+        display: table-cell;
+        padding: 5px;
+        background: $org-ast-properties-background-color;
+        border: 1px solid $org-ast-properties-border-color;
+      }
+
+      & > .org-ast-property-key {
+        font-family: monospace;
+      }
+
+      & > .org-ast-property-value {
+        width: 100%;
+        font-family: monospace;
+      }
+    }
+
+    &.depth-0 { background: white; }
+    &.depth-1 { background: #F3F3F3; }
+  }
+
+  .org-ast-node-contents > .org-ast-other {
+    border: 1px solid $org-ast-border-color;
+    font-family: monospace;
+    padding: 5px;
+  }
+}

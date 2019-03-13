@@ -5,6 +5,7 @@ from flask import (
 	Blueprint, render_template, Markup, send_file, abort, url_for, redirect,
 	current_app,
 )
+import jinja2
 
 
 pyorg_flask = Blueprint('pyorg', __name__, template_folder='templates')
@@ -16,6 +17,12 @@ def context_processor():
 	return dict(
 		favorite_files=current_app.config.get('ORG_FAVORITE_FILES', []),
 	)
+
+@jinja2.contextfilter
+@pyorg_flask.app_template_test('orgnode')
+def test_orgast(value):
+	from pyorg.ast import OrgNode
+	return isinstance(value, OrgNode)
 
 
 @pyorg_flask.route('/files/')
@@ -56,6 +63,7 @@ def view_org_file(path):
 
 	return render_template(
 		'orgfile.html.j2',
+		ast=content,
 		file_content=html,
 		file_name=path.name,
 		file_title=path.stem,

@@ -1,4 +1,5 @@
 {#  Displays exported .org file #}
+{% from 'macros.html.j2' import render_org_ast_node %}
 
 {% extends 'rtd_base.html.j2' %}
 
@@ -26,6 +27,9 @@
 	<div class="org-content">
 		{{ file_content }}
 	</div>
+
+{#    <pre class="literal-block" style="margin-top: 50px;">{{ source_json }}</pre>#}
+    {{ render_org_ast_node(ast) }}
 
 {% endblock content %}
 
