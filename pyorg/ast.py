@@ -125,7 +125,7 @@ def org_elem_from_json(data):
 	-------
 	.OrgElement
 	"""
-	type_ = data['org_element_type']
+	type_ = data['org_node_type']
 	props = {k: _from_json(v) for k, v in data['properties'].items()}
 	contents = list(map(_from_json, data['contents']))
 
