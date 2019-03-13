@@ -24,17 +24,17 @@
                 {% endif %}
             {% endfor %}
         </div>
-    
+
     </div>
 {% endmacro %}
 
 
 {% macro render_org_ast_properties(property_dict) %}
-	{% for key in property-dict %}
+	{% for key in property_dict %}
 		<div class="org-ast-property-pair">
 			<div class="org-ast-property-key">{{ key }}</div>
 			<div class="org-ast-property-value">
-				{% set value = property-dict[key] %}
+				{% set value = property_dict[key] %}
 				{% if value is orgnode %}
 					{{ render_org_ast_node(value) }}
 				{% else %}
