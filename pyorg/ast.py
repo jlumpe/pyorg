@@ -56,9 +56,10 @@ class OrgNode:
 	"""A node in an org file abstract syntaxt tree.
 	"""
 
-	def __init__(self, type, props=None, contents=None):
+	def __init__(self, type, props=None, contents=None, keywords=None):
 		self.type = type
 		self.props = dict(props or {})
+		self.keywords = dict(keywords or {})
 		self.contents = list(contents or [])
 
 	@property
@@ -127,6 +128,10 @@ def _from_json(data):
 	raise TypeError(type(data))
 
 
+def _mapping_from_json(data):
+	return {k: _from_json(v) for k, v in data.items()}
+
+
 def org_node_from_json(data):
 	"""Parse an org AST node from JSON data.
 
@@ -135,7 +140,8 @@ def org_node_from_json(data):
 	.OrgNode
 	"""
 	type_ = data['org_node_type']
-	props = {k: _from_json(v) for k, v in data['properties'].items()}
+	props = _mapping_from_json(data['properties'])
+	keywords = _mapping_from_json(data.get('keywords') or {})
 	contents = list(map(_from_json, data['contents']))
 
-	return OrgNode(type_, props, contents)
+	return OrgNode(type_, props, contents, keywords)
