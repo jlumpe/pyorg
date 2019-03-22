@@ -3,7 +3,7 @@
 from collections import ChainMap
 from xml.dom.minidom import Document
 
-from .ast import ORG_ALL_OBJECTS
+from .ast import ORG_ALL_OBJECTS, get_node_type
 
 
 def add_class(elem, class_):
@@ -97,6 +97,8 @@ class OrgHtmlConverter:
 		'quote-block': 'blockquote',
 		'verse-block': 'p',
 		'center-block': 'div',  # Contains paragraph node?
+		'timestamp': 'span',
+		'statistics-cookie': 'span',
 	}
 
 	DEFAULT_CONFIG = {
@@ -248,18 +250,49 @@ class OrgHtmlConverter:
 
 	@_convert_node.register('plain-list')
 	def _convert_plain_list(self, node, ctx):
+		if node['type'] == 'descriptive':
+			return self._convert_dlist(node, ctx)
+		else:
+			return self._convert_uo_list(node, ctx)
+
+	def _convert_uo_list(self, node, ctx):
+		"""Convert ordered or unordered list."""
 		listtype = node['type']
 
 		if listtype == 'ordered':
 			tag = 'ol'
 		elif listtype == 'unordered':
 			tag = 'ul'
-		elif listtype == 'descriptive':
-			return self._convert_dlist(node, ctx)
 		else:
 			assert False
 
-		return self._convert_node_default(node, ctx, tag=tag)
+		html = self._make_elem_default(node, ctx, tag=tag)
+
+		for item in node.contents:
+			assert item.type == 'item'
+			html.appendChild(self._convert_uo_list_item(item, ctx))
+
+		return html
+
+	def _convert_uo_list_item(self, node, ctx):
+		"""Convert ordered/unordered list item."""
+
+		html = self._make_elem_default(node, ctx)
+
+		# Checkbox state
+		if node.props['checkbox']:
+			add_class(html, 'org-checkbox org-checkbox-%s' % node.props['checkbox'])
+
+		# If first child is a paragraph, extract its contents
+		# (<p> tag inside <li> won't display correctly).
+		contents = list(node.contents)
+
+		if contents and get_node_type(contents[0]) == 'paragraph':
+			contents = contents[0].contents + contents[1:]
+
+		self._add_children(html, contents, ctx)
+
+		return html
 
 	def _convert_dlist(self, node, ctx):
 		"""Convert a description list."""
@@ -356,9 +389,10 @@ class OrgHtmlConverter:
 
 	@_convert_node.register('verbatim')
 	@_convert_node.register('example-block')
+	@_convert_node.register('statistics-cookie')
 	def _convert_node_with_value(self, node, ctx):
 		"""Convert a node with "value" property that should be its text content."""
-		value = node.props['value']
+		value = node['value']
 		assert isinstance(value, str)
 		html = self._make_elem_default(node, ctx)
 		html.appendChild(self.doc.createTextNode(value))
@@ -379,7 +413,7 @@ class OrgHtmlConverter:
 		for row in node.contents:
 			assert row.type == 'table-row'
 
-			if row.props['type'] == 'rule':
+			if row['type'] == 'rule':
 				# New block
 				current_block = []
 				blocks.append(current_block)
@@ -410,3 +444,10 @@ class OrgHtmlConverter:
 					self._add_children(cell_elem, cell.contents, ctx)
 
 		return table_elem
+
+	@_convert_node.register('timestamp')
+	def _convert_timestamp(self, node, ctx):
+		html = self._make_elem_default(node, ctx)
+		add_class(html, 'org-timestamp-%s' % node['type'])
+		html.appendChild(self.doc.createTextNode(node['raw-value']))
+		return html
