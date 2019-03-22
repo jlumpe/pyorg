@@ -1,0 +1,20 @@
+/*
+Basic layout of page
+ */
+
+// Side menu
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: $sidebar-width;
+}
+
+// Main content
+.content {
+  margin-left: $sidebar-width;
+  max-width: $content-max-width;
+  padding: 1.5em 3em;
+  background: #fcfcfc;
+}

@@ -9,16 +9,17 @@
 {% block content %}
 
 	{# Breadcrumbs #}
-	<div><ul class="wy-breadcrumbs">
-		{% for dirname in ['root'] + (parents | list) %}
-			<li>
-				<a href="./{{ '../' * (depth - loop.index0) }}">{{ dirname }}</a>
-                »
-			</li>
-		{% endfor %}
-		<li>{{ file_name }}</li>
+	<div>
+        <ul class="breadcrumbs">
+			{% for dirname in ['root'] + (parents | list) %}
+				<li>
+					<a href="./{{ '../' * (depth - loop.index0) }}">{{ dirname }}</a>
+				</li>
+			{% endfor %}
+			<li>{{ file_name }}</li>
+		</ul>
 		<hr/>
-	</ul></div>
+	</div>
 
 	{# Title #}
 	<h1>{{ file_title | capitalize }}</h1>
@@ -36,7 +37,7 @@
 {% block toc %}
     {{ super() }}
 
-    <p class="caption"><span class="caption-text">Document</span></p>
+    <h2 class="sidebar-menu-section">Document</h2>
     <ul>
     {% for i in range(5) %}
         <li><a href="#">Header {{ i+1 }}</a></li>

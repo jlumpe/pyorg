@@ -9,7 +9,9 @@ const path = require('path'),
 
 sass.compiler = require('node-sass');
 
-const static_dir = './pyorg/flask/static/';
+const static_dir = './pyorg/flask/static/',
+      sass_files = './assets/**/*.scss',
+      script_files = './assets/**/*.js';
 
 
 const font_files = [
@@ -42,19 +44,19 @@ const libs = parallel(libs_concat, libs_mathjax);
 
 
 function scripts() {
-    return src('./assets/**/*.js')
+    return src(script_files)
         .pipe(concat('app.js'))
         .pipe(dest(static_dir));
 }
 
 
 function watch_scripts() {
-    watch('./assets/**/*.js', scripts);
+    watch(script_files, scripts);
 }
 
 
 function compile_sass() {
-    return src('./assets/**/*.scss')
+    return src('./assets/sass/styles.scss')
         .pipe(sourcemaps.init())
         .pipe(sass({
             includePaths: ['node_modules'],
@@ -64,7 +66,7 @@ function compile_sass() {
 }
 
 function watch_sass() {
-    watch('./assets/**/*.scss', compile_sass);
+    watch(sass_files, compile_sass);
 }
 
 
