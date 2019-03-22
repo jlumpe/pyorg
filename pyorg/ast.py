@@ -53,14 +53,41 @@ ORG_ALL_NODE_TYPES = set.union(*map(set, [ORG_ALL_ELEMENTS, ORG_ALL_OBJECTS]))
 
 
 class OrgNode:
-	"""A node in an org file abstract syntaxt tree.
+	"""A node in an org file abstract syntax tree.
+
+	Implements the sequence protocol as a sequence containing its child nodes
+	(identically to :attr:`contents`). Also allows accessing property values by
+	indexing with a string key.
+
+	Attributes
+	----------
+
+	type: str
+		Node type, obtained from `org-element-type`.
+	props : dict
+		Dictionary of property values, obtained from `org-element-property`.
+	contents : list
+		List of contents (org nodes or strings), obtained from
+		`org-element-contents`.
+	keywords : dict
+		Dictionary of keyword values.
+	parent : OrgNode
+		Parent AST node.
+	outline : OrgOutlineNode
+		Most recent outline node in the node's ancestors (not including self).
+	is_outline : bool
+		Whether this node is an outline node.
 	"""
 
-	def __init__(self, type, props=None, contents=None, keywords=None):
+	is_outline = False
+
+	def __init__(self, type, props=None, contents=None, keywords=None, parent=None, outline=None):
 		self.type = type
 		self.props = dict(props or {})
 		self.keywords = dict(keywords or {})
 		self.contents = list(contents or [])
+		self.parent = parent
+		self.outline = outline
 
 	@property
 	def children(self):
@@ -110,13 +137,92 @@ class OrgNode:
 		print_()
 
 
-def _from_json(data):
+class OrgOutlineNode(OrgNode):
+	"""Org node that is a component of the outline tree.
+
+	Corresponds to the root org-data node or a headline node.
+
+	Attributes
+	----------
+
+	level : int
+		Outline level. 0 corresponds to the root node of the file.
+	title : str
+		Title of outline node as plain text.
+	id : str
+		Unique ID for TOC tree.
+	section : OrgNode
+		Org node with type `"section"` that contains the outline node's direct
+		content (not part of any nested outline nodes).
+	children : list
+		Child outline nodes.
+	"""
+
+	is_outline = True
+
+	def __init__(self, type, level=None, title=None, id=None, section=None, children=None, **kw):
+		super().__init__(type, **kw)
+		self.level = level
+		self.title = title
+		self.id = None
+		self.section = section
+		self.outline_children = children
+
+
+def _node_from_json(data, parent=None, outline=None, title=None, **kw):
+	type_ = data['org_node_type']
+	is_outline = type_ in ('org-data', 'headline')
+
+	# Create empty node
+	if is_outline:
+		node = OrgOutlineNode(type_, parent=parent, outline=outline)
+		child_outline = node
+	else:
+		node = OrgNode(type_, parent=parent, outline=outline)
+		child_outline = outline
+
+	child_kw = {'parent': node, 'outline': child_outline, **kw}
+
+	# Create children with correct parent and add to parent
+	for key, value in data['properties'].items():
+		node.props[key] = _from_json(value, **child_kw)
+	for key, value in data['keywords'].items():
+		node.keywords[key] = _from_json(value, **child_kw)
+	for item in data['contents']:
+		node.contents.append(_from_json(item, **child_kw))
+
+	if is_outline:
+		node.level = node['level'] if type_ == 'headline' else 0
+
+		children = list(node.contents)
+
+		# Section should be first node in contents, if it exists
+		if children and children[0].type == 'section':
+			node.section = children.pop(0)
+
+		# Remainder should be outline nodes (specifically headlines)
+		assert all(child.is_outline for child in children)
+		node.outline_children = children
+
+		# Get default title
+		if title is None:
+			if type_ == 'headline':
+				title = node['raw-value']
+			else:
+				title = node.section.keywords.get('TITLE')
+
+		node.title = title
+
+	return node
+
+
+def _from_json(data, **kw):
 	if isinstance(data, list):
-		return list(map(_from_json, data))
+		return [_from_json(item, **kw) for item in  data]
 
 	if isinstance(data, dict):
 		if 'org_node_type' in data:
-			return org_node_from_json(data)
+			return _node_from_json(data, **kw)
 		if '_error' in data:
 			print('Parse error:', data['_error'])
 			return None
@@ -128,8 +234,8 @@ def _from_json(data):
 	raise TypeError(type(data))
 
 
-def _mapping_from_json(data):
-	return {k: _from_json(v) for k, v in data.items()}
+def _mapping_from_json(data, **kw):
+	return {k: _from_json(v, **kw) for k, v in data.items()}
 
 
 def org_node_from_json(data):
@@ -139,27 +245,32 @@ def org_node_from_json(data):
 	-------
 	.OrgNode
 	"""
-	type_ = data['org_node_type']
-	props = _mapping_from_json(data['properties'])
-	keywords = _mapping_from_json(data.get('keywords') or {})
-	contents = list(map(_from_json, data['contents']))
-
-	return OrgNode(type_, props, contents, keywords)
+	return _node_from_json(data)
 
 
-def get_document_title(org_data):
-	"""Get the title of a top-level AST node.
+def get_node_type(obj):
+	"""Get type of AST node, returning None for other types."""
+	return obj.type if isinstance(obj, OrgNode) else None
 
-	Parameters
-	----------
-	org_data: .OrgNode
-		Root AST node of type "org-data".
 
-	Returns
-	str
-		Title if document has one, otherwise None.
-	"""
-	section = org_data.contents[0]
-	assert section.type == 'section'
+def assign_outline_ids(root):
+	"""Assign unique IDs to outline nodes."""
+	assigned = {}
+	for child in root.outline_children:
+		_assign_outline_ids(child, assigned)
+	return assigned
 
-	return section.keywords.get('TITLE')
+import re
+
+def _assign_outline_ids(node, assigned):
+	id = base = re.sub(r'[^\w_-]+', '-', node.title).strip('-')
+	i = 1
+	while id in assigned:
+		i += 1
+		id = '%s-%d' % (base, i)
+	node.id = id
+	assigned[id] = node
+
+	for child in node.outline_children:
+		_assign_outline_ids(child, assigned)
+
