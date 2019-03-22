@@ -37,6 +37,12 @@ def viewfile(path=''):
 	return get_other_file(path)
 
 
+def _make_toc(node):
+	return (node.title, node.id, list(map(_make_toc, node.outline_children)))
+
+def make_toc(root):
+	return list(map(_make_toc, root.outline_children))
+
 def view_org_file(path):
 	path = Path(path)
 	orgfile = current_app.config["ORG_DIR"] / path
@@ -52,9 +58,10 @@ def view_org_file(path):
 	)
 	result = emacs.getresult(el, encode=False)
 
-	from pyorg.ast import org_node_from_json, get_document_title
+	from pyorg.ast import org_node_from_json, assign_outline_ids
 	data = json.loads(result)
 	content = org_node_from_json(data)
+	assign_outline_ids(content)
 
 	from pyorg.html import OrgHtmlConverter
 	converter = OrgHtmlConverter()
@@ -66,9 +73,10 @@ def view_org_file(path):
 		ast=content,
 		file_content=html,
 		file_name=path.name,
-		file_title=get_document_title(content) or path.stem,
+		file_title=content.title or path.stem,
 		parents=path.parent.parts,
 		source_json=json.dumps(data, indent=4, sort_keys=True),
+		toc=make_toc(content),
 	)
 
 

@@ -44,3 +44,22 @@
 		</div>
 	{% endfor %}
 {% endmacro %}
+
+
+{% macro sidebar_toc_list(items, level=1) %}
+    <ul class="nav">
+    {% for title, id, children in items %}
+        {{ sidebar_toc_item(title, id, children, level=level) }}
+    {% endfor %}
+    </ul>
+{% endmacro %}
+
+{% macro sidebar_toc_item(title, id, children, level=1) %}
+    <li class="toctree-l{{ level }}">
+        <a class="" href="#{{ id }}">
+            {% if children %}<span class="toctree-expand"></span>{% endif %}
+            {{ title }}
+        </a>
+        {% if children %}{{ sidebar_toc_list(children, level + 1) }}{% endif %}
+    </li>
+{% endmacro %}

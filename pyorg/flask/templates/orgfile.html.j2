@@ -1,5 +1,5 @@
 {#  Displays exported .org file #}
-{% from 'macros.html.j2' import render_org_ast_node %}
+{% from 'macros.html.j2' import render_org_ast_node, sidebar_toc_list %}
 
 {% extends 'rtd_base.html.j2' %}
 
@@ -34,13 +34,12 @@
 
 {% endblock content %}
 
+
 {% block toc %}
     {{ super() }}
 
     <h2 class="sidebar-menu-section">Document</h2>
-    <ul>
-    {% for i in range(5) %}
-        <li><a href="#">Header {{ i+1 }}</a></li>
-    {% endfor %}
-    </ul>
+    <div id="file-toc">
+    {{ sidebar_toc_list(toc) }}
+    </div>
 {% endblock toc %}
