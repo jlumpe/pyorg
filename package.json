@@ -19,9 +19,7 @@
   "dependencies": {
     "bootstrap": "^4.3.1",
     "jquery": "^3.3.1",
-    "mathjax": "^2.7.5",
-    "sphinx_rtd_theme": "^0.4.2",
-    "wyrm": "^1.0.9"
+    "mathjax": "^2.7.5"
   },
   "devDependencies": {
     "del": "^3.0.0",

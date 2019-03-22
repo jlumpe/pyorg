@@ -13,7 +13,6 @@ const static_dir = './pyorg/flask/static/';
 
 
 const font_files = [
-    'sphinx_rtd_theme/fonts/**/*',
 ];
 
 function fonts() {
@@ -24,8 +23,6 @@ function fonts() {
 
 const lib_files = [
     'jquery/dist/jquery.js',
-    'sphinx_rtd_theme/js/modernizr.min.js',
-    'sphinx_rtd_theme/js/theme.js',
 ];
 
 function libs_concat() {
