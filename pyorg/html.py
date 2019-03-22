@@ -190,16 +190,18 @@ class OrgHtmlConverter:
 
 	@_make_elem.register('headline')
 	def _make_headline(self, node, ctx):
-		level = node['level']
-
-		if not (1 <= level <= 5):
-			raise NotImplementedError()
+		assert node.is_outline
 
 		html = self.doc.createElement('div')
-		html.attributes['class'] = 'org-header-container org-header-level-%d' % level
+		html.attributes['class'] = 'org-header-container org-header-level-%d' % node.level
 
-		header = self._make_elem_default(node, ctx, tag='h%d' % (level + 1))
+		h_level = tag = 'h%d' % min(node.level + 1, 6)
+		header = self._make_elem_default(node, ctx, tag=tag)
 		html.appendChild(header)
+
+		# ID
+		if node.id:
+			html.attributes['id'] = node.id
 
 		# TODO info
 		todo_type = node.props['todo-type']
