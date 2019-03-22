@@ -6,6 +6,19 @@
 {% set page_title = file_name %}
 {% set depth = parents | length %}
 
+
+{% block head %}
+{{ super() }}
+
+<script type="text/javascript">
+    // Enable scrollspy
+	$( document ).ready(function() {
+		$('body').scrollspy({target: '#file-toc'});
+	});
+</script>
+{% endblock head %}
+
+
 {% block content %}
 
 	{# Breadcrumbs #}

@@ -25,6 +25,7 @@ function fonts() {
 
 const lib_files = [
     'jquery/dist/jquery.js',
+    'bootstrap/dist/js/bootstrap.js',
 ];
 
 function libs_concat() {
