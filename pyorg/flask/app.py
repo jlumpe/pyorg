@@ -9,13 +9,8 @@ from .blueprint import pyorg_flask
 app = Flask(__package__)
 
 
-app.config.update(
-	ORG_DIR='/Users/student/org/',
-	ORG_FAVORITE_FILES=[
-		'topics/math.org',
-		'thesis/references.org',
-	],
-)
+app.config.from_object(__package__ + '.config_default')
+app.config.from_envvar('PYORG_CONFIG', silent=True)
 
 
 emacs = EmacsInterface(['emacsclient'], client=True)
