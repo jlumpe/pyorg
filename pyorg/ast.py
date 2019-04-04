@@ -5,6 +5,9 @@ See https://orgmode.org/worg/dev/org-syntax.html for a description of the org
 syntax.
 """
 
+import re
+from collections.abc import Iterable
+
 
 # org-element-all-elements
 # "An element defines syntactical parts that are at the same level as a paragraph,
@@ -52,6 +55,19 @@ ORG_RECURSIVE_OBJECTS = frozenset({
 ORG_ALL_NODE_TYPES = set.union(*map(set, [ORG_ALL_ELEMENTS, ORG_ALL_OBJECTS]))
 
 
+#: Mapping from org element/node types to their Python class
+NODE_CLASSES = {}
+
+
+def node_cls(type_):
+	"""Register a node class for a particular type in :data:`.NODE_CLASSES`.
+	"""
+	def decorator(cls):
+		NODE_CLASSES[type_] = cls
+		return cls
+	return decorator
+
+
 class OrgNode:
 	"""A node in an org file abstract syntax tree.
 
@@ -81,30 +97,54 @@ class OrgNode:
 
 	is_outline = False
 
-	def __init__(self, type, props=None, contents=None, keywords=None, parent=None, outline=None):
-		self.type = type
+	def __init__(self, type_, props=None, contents=None, keywords=None, parent=None, outline=None):
+		self.type = type_
 		self.props = dict(props or {})
 		self.keywords = dict(keywords or {})
 		self.contents = list(contents or [])
 		self.parent = parent
 		self.outline = outline
 
+	@staticmethod
+	def _iter_children_recursive(obj):
+		"""
+		Iterate through child nodes through recursive data structures (e.g.
+		property values that are lists that contain nodes) but don't recurse
+		into the children themselves.
+		"""
+		# Return nodes directly
+		if isinstance(obj, OrgNode):
+			yield obj
+
+		# Skip strings - otherwise we get infinite recursion trying to iterate
+		elif isinstance(obj, str):
+			return
+
+		# Iterate through lists and other collections
+		elif isinstance(obj, Iterable):
+			for item in obj:
+				yield from OrgNode._iter_children_recursive(item)
+
+		# Ignore
+
 	@property
 	def children(self):
-		return [c for c in self.contents if isinstance(c, OrgNode)]
+		"""Iterator over all child AST nodes (in contents or keyword/property values."""
+		for collection in (self.props.values(), self.keywords.values(), self.contents):
+			yield from self._iter_children_recursive(collection)
 
 	def __repr__(self):
 		return '%s(type=%r)' % (type(self).__name__, self.type)
 
 	def __len__(self):
-		return len(self.children)
+		return len(self.contents)
 
 	def __iter__(self):
-		return iter(self.children)
+		return iter(self.contents)
 
 	def __getitem__(self, key):
 		if isinstance(key, int):
-			return self.children[key]
+			return self.contents[key]
 		elif isinstance(key, str):
 			return self.props[key]
 		else:
@@ -137,6 +177,8 @@ class OrgNode:
 		print_()
 
 
+@node_cls('org-data')
+@node_cls('headline')
 class OrgOutlineNode(OrgNode):
 	"""Org node that is a component of the outline tree.
 
@@ -154,64 +196,65 @@ class OrgOutlineNode(OrgNode):
 	section : OrgNode
 		Org node with type `"section"` that contains the outline node's direct
 		content (not part of any nested outline nodes).
-	children : list
-		Child outline nodes.
 	"""
 
 	is_outline = True
 
-	def __init__(self, type, level=None, title=None, id=None, section=None, children=None, **kw):
-		super().__init__(type, **kw)
-		self.level = level
-		self.title = title
-		self.id = None
-		self.section = section
-		self.outline_children = children
+	def __init__(self, type_, *args, title=None, id=None, **kw):
+		super().__init__(type_, *args, **kw)
+
+		# Section and child outline nodes from content
+		if self.contents and self.contents[0].type == 'section':
+			self.section = self.contents[0]
+		else:
+			self.section = None
 
 
-def _node_from_json(data, parent=None, outline=None, title=None, **kw):
-	type_ = data['org_node_type']
-	is_outline = type_ in ('org-data', 'headline')
-
-	# Create empty node
-	if is_outline:
-		node = OrgOutlineNode(type_, parent=parent, outline=outline)
-		child_outline = node
-	else:
-		node = OrgNode(type_, parent=parent, outline=outline)
-		child_outline = outline
-
-	child_kw = {'parent': node, 'outline': child_outline, **kw}
-
-	# Create children with correct parent and add to parent
-	for key, value in data['properties'].items():
-		node.props[key] = _from_json(value, **child_kw)
-	for key, value in data['keywords'].items():
-		node.keywords[key] = _from_json(value, **child_kw)
-	for item in data['contents']:
-		node.contents.append(_from_json(item, **child_kw))
-
-	if is_outline:
-		node.level = node['level'] if type_ == 'headline' else 0
-
-		children = list(node.contents)
-
-		# Section should be first node in contents, if it exists
-		if children and children[0].type == 'section':
-			node.section = children.pop(0)
-
-		# Remainder should be outline nodes (specifically headlines)
-		assert all(child.is_outline for child in children)
-		node.outline_children = children
-
-		# Get default title
+		# Default title
 		if title is None:
 			if type_ == 'headline':
-				title = node['raw-value']
+				title = self['raw-value']
 			else:
-				title = node.section.keywords.get('TITLE')
+				title = self.section.keywords.get('TITLE')
 
-		node.title = title
+		self.title = title
+		self.id = id
+
+		self.level = self['level'] if type_ == 'headline' else 0
+
+	@property
+	def outline_children(self):
+		"""Iterable over child outline nodes."""
+		return (child for child in self.contents if child.is_outline)
+
+	def outline_tree(self):
+		"""Create a list of ``(child, child_tree)`` pairs."""
+		return [(child, child.outline_tree()) for child in self.outline_children]
+
+	def dump_outline(self):
+		"""Print representation of node's outline subtree."""
+		self._dump_outline()
+
+	def _dump_outline(self, indent=0, n=None):
+		print('  ' * indent, end='')
+		if n is not None:
+			print('%d. ' % n, end='')
+		print(self.title)
+		for (i, child) in enumerate(self.outline_children):
+			child._dump_outline(indent + 1, i)
+
+
+
+def _node_from_json(data, **kw):
+	type_ = data['org_node_type']
+
+	# Parse child nodes first
+	props = _mapping_from_json(data['properties'], **kw)
+	contents = [_from_json(c, **kw) for c in data['contents']]
+	keywords = _mapping_from_json(data['keywords'], **kw)
+
+	cls = NODE_CLASSES.get(type_, OrgNode)
+	node = cls(type_, props=props, contents=contents, keywords=keywords)
 
 	return node
 
@@ -260,7 +303,6 @@ def assign_outline_ids(root):
 		_assign_outline_ids(child, assigned)
 	return assigned
 
-import re
 
 def _assign_outline_ids(node, assigned):
 	id = base = re.sub(r'[^\w_-]+', '-', node.title).strip('-')
