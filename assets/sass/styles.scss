@@ -1,7 +1,10 @@
 @import 'variables.scss';
 @import 'layout';
 @import 'sidebar';
-//@import 'org.scss';
+@import 'markup';
+@import 'tables';
+@import 'org';
+@import 'ast';
 
 
 @import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700);
@@ -36,85 +39,6 @@ body{
     padding:1.618em 3.236em;
 }
 
-p{
-    font-size:16px;
-    line-height:24px;
-    margin:0px 0px 24px 0px;
-}
-
-/*
-Links
- */
-a {
-  color: #2980B9;
-  text-decoration: none;
-  cursor: pointer;
-
-  &:visited {
-    color: #9B59B6;
-  }
-}
-
-
-/*
-Headings
- */
-h1,h2,h3,h4,h5,h6,legend{
-    font-family:"Roboto Slab","ff-tisa-web-pro","Georgia",Arial,sans-serif;
-    font-weight:700;
-    margin-top:0;
-}
-
-h1{
-    font-size:175%;
-}
-
-.subtitle{
-    font-size:95%; /* of h1 */
-}
-
-h2{
-    font-size:150%;
-}
-
-h3{
-    font-size:125%;
-}
-
-h4{
-    font-size:115%;
-}
-
-h5{
-    font-size:110%;
-}
-
-h6{
-    font-size:100%;
-}
-
-h4,h5,h6{
-    color:#2980B9;
-    font-weight:300;
-}
-
-
-/*
-Typography
- */
-
-
-/*
-Misc
- */
-hr {
-    display: block;
-    height: 1px;
-    border: 0;
-    border-top: 1px solid #e1e4e5;
-    margin: 24px 0;
-    padding: 0;
-}
 
 /*
 Breadcrumbs

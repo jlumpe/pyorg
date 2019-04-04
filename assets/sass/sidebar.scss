@@ -49,27 +49,59 @@ Sidebar / side menu
         display: none;
       }
 
-      // Active
-      &.active {
-        background: #e3e3e3;
+      a {
+        line-height: 18px;
+        padding: .4em 1.5em;
+        display: block;
+        //position: relative;
+        font-size: 90%;
 
-        & > a {
-          color: #404040;
-          background: #fcfcfc;
+        &:hover {
+          background-color: $sidebar-link-hover-bg;
+          cursor: pointer;
         }
 
-        // Show nested lists
-        & > ul {
+        & > .toctree-expand {
           display: block;
+          float: left;
+          margin-left: -1.2em;
+
+          &::before {
+            content: "+";
+            font-size: 80%;
+          }
         }
       }
+    }
 
+    // Active list items
+    li.active {
+
+      & > a {
+        color: #404040;
+        background: #fcfcfc;
+        font-weight: bold;
+      }
+
+      a:hover {
+        background: #d6d6d6;
+      }
+
+      // Show nested lists
+      & > ul {
+        display: block;
+      }
+    }
+
+    // Nested
+    li ul li {
+      color: #404040;
     }
 
     // Level one
     li.toctree-l1 {
       &.active {
-
+        background: #e3e3e3;
         & > a {
           border-bottom: solid 1px #c9c9c9;
           border-top: solid 1px #c9c9c9;
@@ -80,24 +112,38 @@ Sidebar / side menu
     // Level two
     li.toctree-l2 {
       & > a {
-        color: #404040;
+        padding-left: 2.5em;
+      }
+
+      &.active > a{
+        background: #c9c9c9;
       }
     }
 
-    a {
-      line-height: 18px;
-      padding: .4045em 1.618em;
-      display: block;
-      //position: relative;
+    // Level three
+    li.toctree-l3 {
       font-size: 90%;
 
-      &:hover {
-        background-color: $sidebar-link-hover-bg;
-        cursor: pointer;
+      & > a {
+        padding-left: 3.5em;
+        background: #c9c9c9;
+      }
+
+      &.active > a{
       }
     }
 
+    li.toctree-l4 {
+      & > a {
+        padding-left: 4.5em;
+      }
+    }
 
+    li.toctree-l5 {
+      & > a {
+        padding-left: 5.5em;
+      }
+    }
 
     // Collapsible menu list item
     li.menu-collapse.expanded {

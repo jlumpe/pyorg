@@ -1,0 +1,163 @@
+/*
+Styling for org file elements.
+ */
+
+
+.org-content {
+  //@extend .rst-content;
+}
+
+
+.org-tag {
+}
+
+
+%code-block-base {
+  //@extend code.literal;
+
+  // From .rst-content div[class^='highlight'] pre
+  font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",Courier,monospace;
+  font-size: 12px;
+  line-height: 1.4;
+
+  // From .rst-content div[class^='highlight']
+  border: 1px solid #e1e4e5;
+  //overflow-x: auto;
+  margin: 1px 0 24px 0;
+
+
+  // From .rst-content div[class^='highlight'] pre
+  white-space: pre;
+  //margin: 0;
+  padding: 12px 12px;
+  display: block;
+  overflow: auto;
+
+  // From .highlight
+  background: #f8f8f8;
+}
+
+
+.org-node {
+
+  &.org-link {
+    &.org-link-raw {
+      font-family: monospace;
+    }
+    &.org-error {
+      color: $org-error-font-color;
+    }
+  }
+
+  &.org-src-block {
+    & > .org-src-block-value {
+      @extend %code-block-base;
+    }
+  }
+
+  &.org-center-block {
+    text-align: center;
+  }
+
+
+  &.org-verbatim {
+    @extend code;
+    color: inherit;
+  }
+
+  &.org-example-block {
+    @extend %code-block-base;
+  }
+
+  &.org-table {
+    @extend %rtd-table;
+  }
+}
+
+// Headline stuff
+.org-headline > * {
+  vertical-align: middle;
+}
+
+// A bit more space after TODO stuff
+.org-headline-text:not(:first-child) {
+  margin-left: .25em;
+}
+
+%headline-taglike {
+  padding: .1em .25em;
+  border-radius: 4px;
+  font-size: 90%;
+  color: #fff;
+  //font-family: sans-serif;
+}
+
+.org-todo {
+  @extend %headline-taglike;
+  background-color: #f29f97;
+}
+
+.org-todo-priority {
+  @extend %headline-taglike;
+
+  // Default color for level C and below
+  background-color: #dbf223;
+
+  &.org-todo-priority-A { background-color: #f25242; }
+  &.org-todo-priority-B { background-color: #f28d3d;}
+}
+
+.org-headline > .org-tags {
+  float: right;
+}
+
+.org-tag {
+  @extend %headline-taglike;
+  background-color: #666;
+  font-weight: normal;
+  font-size: 75%;
+}
+
+
+.org-error-msg {
+  //@extend .wy-alert;
+  //@extend .wy-alert.wy-alert-danger;
+}
+
+
+.pyorg-dirindex {
+
+  & > li {
+
+    &:before { margin-right: 0.5em; }
+    &.directory:before { content: "📁"; }
+    &.file:before { content: "📄"; }
+  }
+
+}
+
+
+table.agenda-table {
+  font-size: 75%;
+}
+
+
+@mixin priority-letter($color) {
+  color: $color;
+  border-color: $color;
+  background-color: tint($color, 50%);
+}
+
+.org-agenda-priority {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+
+  font-weight: bold;
+  border: 1px solid;
+  border-radius: .25em;
+
+  &.priority-A { @include priority-letter(#FF0000); }
+  &.priority-B { @include priority-letter(#FF9900); }
+  &.priority-C { @include priority-letter(#99FF00); }
+}
