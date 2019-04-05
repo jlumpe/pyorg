@@ -132,11 +132,22 @@ def agenda():
 		E.org_json_encode_agenda_buffer()
 	)
 	result = emacs.getresult(el, encode=False)
-	data = json.loads(result)
+	items = json.loads(result)
 
-	data.sort(key=lambda item: (item['file-relative'], *item['path']))
+	from pyorg.html import OrgHtmlConverter
+	converter = OrgHtmlConverter()
+
+	from pyorg.ast import org_node_from_json, parse_tags
+	for item in items:
+		node = item['node'] = org_node_from_json(item['node'])
+		text = converter.make_headline_text(node)
+		item['text_html'] = text.toprettyxml()
+		item['tags'] = parse_tags(item['tags'] or '')
+
+	items.sort(key=lambda item: (-item['priority'], item['file-relative'], *item['path']))
 
 	return render_template(
 		'agenda.html.j2',
-		items=data,
+		items=items,
+		converter=converter,
 	)

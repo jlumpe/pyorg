@@ -1,36 +1,57 @@
 {# Displays agenda #}
 
 {% extends 'base.html.j2' %}
+{% from 'macros.html.j2' import render_org_ast_node %}
 
 {% set page_title = 'Agenda' %}
 
 
-{% block content %}
+{% block body_content %}
     <div class="container">
         <h1>Agenda</h1>
 
         <table class="agenda-table">
+			<colgroup span="6">
+                <col span="1" style="">
+                <col span="1" style="">
+                <col span="1" style="width: 20%;">
+                <col span="1" style="">
+                <col span="1" style="">
+                <col span="1" style="">
+            </colgroup>
             <thead><tr>
                 <th>File</th>
                 <th>Heading</th>
-                <th>Priority</th>
+                <th></th>
+                <th>Deadline</th>
                 <th>Text</th>
                 <th>Tags</th>
             </tr></thead>
             <tbody>
                 {% for item in items %}
+                    {% set node = item['node'] %}
                     {% set priority = item['priority-letter'] %}
                     <tr>
-                    {% if loop.first or item['file-relative'] != loop.previtem['file-relative'] %}
-                        <td>{{ item['file-relative'] }}</td>
-                    {% else %}<td></td>{% endif %}
-                        <td>{{ item['path'][:-1] | join('/') }}</td>
+						{% if loop.first or item['file-relative'] != loop.previtem['file-relative'] %}
+							<td>{{ item['file-relative'] }}</td>
+						{% else %}
+							<td></td>
+						{% endif %}
+                        <td>{% for p in item['path'][:-1] %}
+                            <span class="agenda-path-component" title="{{p}}">{{ p }}</span>
+                            {% if not loop.last %} / {% endif %}
+						{% endfor %}</td>
                         <td class="text-center">{%  if priority %}
-                            <span class="org-agenda-priority priority-{{ priority }}">{{ priority }}</span>
+                            <span class="org-todo-priority org-todo-priority-{{ priority }}">{{ priority }}</span>
                         {% endif %}</td>
-                        <td>{{ item['txt'] }}</td>
                         <td>
-                            {% for tag in (item['tags'] or '').split(':') %}
+                            {% if 'deadline' in node.props %}
+                                {{ converter.convert(node['deadline']).toprettyxml() }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item['text_html'] }}</td>
+                        <td>
+                            {% for tag in item['tags'] %}
                                 <span class="org-tag">{{ tag }}</span>
 							{% endfor %}
                         </td>
@@ -39,4 +60,4 @@
             </tbody>
         </table>
     </div>
-{% endblock content %}
+{% endblock body_content %}

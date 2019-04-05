@@ -1,7 +1,26 @@
 
 
 table.agenda-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+
   td, th {
+    padding: 5px 8px;
+
+    text-align: left;
     vertical-align: top;
+
+    background: #edf0f2;
+  }
+
+  tbody {
+    td {
+      border-top: 1px solid $agenda-table-border-color;
+      border-bottom: 1px solid $agenda-table-border-color;
+    }
+
+    tr:hover > td {
+      background: #c7cacc;
+    }
   }
 }
