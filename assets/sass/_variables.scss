@@ -4,6 +4,7 @@ Layout
 $sidebar-width: 300px;
 $content-max-width: 800px;
 
+
 /*
 Sidebar
  */
@@ -19,9 +20,17 @@ Inline markup
 $code-color: #E74C3C;
 $code-border-color: #e1e4e5;
 
+
 /*
 Tables
  */
 $table-border-color: #e1e4e5;
+
+
+/*
+Org elements
+ */
+$org-timestamp-active-color: #2980B9;
+$org-timestamp-inactive-color: #666;
 
 $org-error-font-color: red;
