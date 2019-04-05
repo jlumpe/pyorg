@@ -7,6 +7,7 @@ syntax.
 
 import re
 from collections.abc import Iterable
+from datetime import datetime
 
 
 # org-element-all-elements
@@ -243,6 +244,37 @@ class OrgOutlineNode(OrgNode):
 		for (i, child) in enumerate(self.outline_children):
 			child._dump_outline(indent + 1, i)
 
+
+@node_cls('timestamp')
+class OrgTimestampNode(OrgNode):
+	"""An org node with type "timestamp".
+
+	Attributes
+	----------
+	begin : datetime
+		Begin date, parsed from properties
+	end : datetime
+		End date, parsed from properties
+	"""
+
+	def __init__(self, type_, *args, **kwargs):
+		assert type_ == 'timestamp'
+		super().__init__(type_, *args, **kwargs)
+
+		self.begin = datetime(
+			self['year-start'],
+			self['month-start'],
+			self['day-start'],
+			self['hour-start'] or 0,
+			self['minute-start'] or 0,
+		)
+		self.end = datetime(
+			self['year-end'],
+			self['month-end'],
+			self['day-end'],
+			self['hour-end'] or 0,
+			self['minute-end'] or 0,
+		)
 
 
 def _node_from_json(data, **kw):
