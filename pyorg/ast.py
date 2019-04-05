@@ -328,23 +328,43 @@ def get_node_type(obj):
 	return obj.type if isinstance(obj, OrgNode) else None
 
 
-def assign_outline_ids(root):
+def assign_outline_ids(root, depth=3):
 	"""Assign unique IDs to outline nodes."""
 	assigned = {}
 	for child in root.outline_children:
-		_assign_outline_ids(child, assigned)
+		_assign_outline_ids(child, assigned, depth - 1)
 	return assigned
 
 
-def _assign_outline_ids(node, assigned):
+def _assign_outline_ids(node, assigned, depth):
 	id = base = re.sub(r'[^\w_-]+', '-', node.title).strip('-')
 	i = 1
 	while id in assigned:
 		i += 1
 		id = '%s-%d' % (base, i)
+
 	node.id = id
 	assigned[id] = node
 
-	for child in node.outline_children:
-		_assign_outline_ids(child, assigned)
+	if depth > 1:
+		for child in node.outline_children:
+			_assign_outline_ids(child, assigned, depth - 1)
 
+
+def parse_tags(string):
+	"""Parse tags from string.
+
+	Parameters
+	----------
+	string : str
+		Tags separated by colons.
+
+	Returns
+	-------
+	list[str]
+		List of tags.
+	"""
+	string = string.strip(':')
+	if not string:
+		return []
+	return string.split(':')
