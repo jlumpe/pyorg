@@ -104,6 +104,7 @@ class OrgHtmlConverter:
 	DEFAULT_CONFIG = {
 		'latex_delims': ('$$', '$$'),
 		'latex_inline_delims': (r'\(', r'\)'),
+		'date_format': '%Y-%m-%d %a',
 	}
 
 	def __init__(self, config=None, **kw):
@@ -188,6 +189,12 @@ class OrgHtmlConverter:
 			if html is not None:
 				parent.appendChild(html)
 
+	def make_headline_text(self, node, ctx=None):
+		"""Make HTML element for text content of headline node."""
+		elem = self._make_elem_base('span', classes='org-header-text')
+		self._add_children(elem, node['title'], ctx)
+		return elem
+
 	@_make_elem.register('headline')
 	def _make_headline(self, node, ctx):
 		assert node.is_outline
@@ -230,8 +237,7 @@ class OrgHtmlConverter:
 				))
 
 		# Text
-		header_text = self._make_elem_base('span', classes='org-header-text')
-		self._add_children(header_text, node['title'], ctx)
+		header_text = self.make_headline_text(node, ctx)
 		header.appendChild(header_text)
 
 		# Tags
@@ -347,7 +353,7 @@ class OrgHtmlConverter:
 			return self._convert_link_default(node, ctx, url=node['path'])
 
 		html = self._convert_link_default(node, ctx)
-		self._add_error(html, text="Can't convert link of type %r!" % linktype)
+		self._add_error(html, text="Can't convert link %r!" % node['raw-link'])
 		return html
 
 	@_convert_node.register('code')
@@ -449,7 +455,27 @@ class OrgHtmlConverter:
 
 	@_convert_node.register('timestamp')
 	def _convert_timestamp(self, node, ctx):
+		begin_str = node.begin.strftime(self.config['date_format'])
+
 		html = self._make_elem_default(node, ctx)
 		add_class(html, 'org-timestamp-%s' % node['type'])
-		html.appendChild(self.doc.createTextNode(node['raw-value']))
+		html.appendChild(self.doc.createTextNode(begin_str))
+
+		return html
+
+	@_convert_node.register('planning')
+	def _convert_planning(self, node, ctx):
+		html = self._make_elem_default(node, ctx, tag='table')
+
+		for key in ['closed', 'scheduled', 'deadline']:
+			if node[key] is not None:
+				row = self._make_elem_base('tr')
+				row.appendChild(self._make_elem_base('th', text=key.title()))
+
+				td = self._make_elem_base('td')
+				td.appendChild(self._convert(node[key], ctx))
+				row.appendChild(td)
+
+				html.appendChild(row)
+
 		return html
