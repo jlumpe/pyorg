@@ -50,7 +50,7 @@ class EmacsInterface:
 
 	Attributes
 	----------
-	cmd : list[str]
+	cmd : str or list[str]
 		Base command to run Emacs.
 	is_client : bool
 	    Whether the command runs ``emacsclient``.
@@ -67,8 +67,12 @@ class EmacsInterface:
 		1 to echo stderr of Emacs command, 2 to echo stdout. 0 turns off.
 	"""
 
-	def __init__(self, cmd, client=False, verbose=1):
-		self.cmd = list(cmd)
+	def __init__(self, cmd=('emacs', '--batch'), client=False, verbose=1):
+		if isinstance(cmd, str):
+			self.cmd = [cmd]
+		else:
+			self.cmd = list(cmd)
+
 		self.is_client = client
 		self.verbose = verbose
 
