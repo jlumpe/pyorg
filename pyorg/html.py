@@ -122,8 +122,26 @@ class OrgHtmlConverter:
 		except KeyError:
 			return 'span' if type_ in ORG_ALL_OBJECTS else 'div'
 
-	def convert(self, what):
-		return self._convert(what, None)
+	def convert(self, node, dom=False):
+		"""Convert org node to HTML.
+
+		Parameters
+		---------
+		node : pyorg.ast.OrgNode
+			Org node to convert.
+		dom : bool
+			Return XML DOM element instead of string.
+
+		Returns
+		-------
+		str or xml.dom.minidom.Element
+		"""
+		elem = self._convert(node, None)
+
+		if dom:
+			return elem
+
+		return elem.toprettyxml()
 
 	def _convert(self, what, ctx):
 		"""Convert an org AST node OR text to HTML element."""
@@ -189,11 +207,15 @@ class OrgHtmlConverter:
 			if html is not None:
 				parent.appendChild(html)
 
-	def make_headline_text(self, node, ctx=None):
+	def make_headline_text(self, node, ctx=None, dom=False):
 		"""Make HTML element for text content of headline node."""
 		elem = self._make_elem_base('span', classes='org-header-text')
 		self._add_children(elem, node['title'], ctx)
-		return elem
+
+		if dom:
+			return elem
+
+		return elem.toprettyxml()
 
 	@_make_elem.register('headline')
 	def _make_headline(self, node, ctx):
@@ -237,7 +259,7 @@ class OrgHtmlConverter:
 				))
 
 		# Text
-		header_text = self.make_headline_text(node, ctx)
+		header_text = self.make_headline_text(node, ctx, dom=True)
 		header.appendChild(header_text)
 
 		# Tags

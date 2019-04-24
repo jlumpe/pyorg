@@ -57,7 +57,7 @@ def view_org_file(path):
 	from pyorg.html import OrgHtmlConverter
 	converter = OrgHtmlConverter()
 
-	html = Markup(converter.convert(content).toprettyxml())
+	html = Markup(converter.convert(content))
 
 	return render_template(
 		'orgfile.html.j2',
@@ -120,8 +120,7 @@ def agenda():
 	converter = OrgHtmlConverter()
 
 	for item in items:
-		text = converter.make_headline_text(item['node'])
-		item['text_html'] = text.toprettyxml()
+		item['text_html'] = converter.make_headline_text(item['node'])
 
 	items.sort(key=lambda item: (-item['priority'], item['file-relative'], *item['path']))
 

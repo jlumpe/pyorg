@@ -46,7 +46,7 @@
                         {% endif %}</td>
                         <td>
                             {% if 'deadline' in node.props %}
-                                {{ converter.convert(node['deadline']).toprettyxml() }}
+                                {{ converter.convert(node['deadline']) }}
                             {% endif %}
                         </td>
                         <td>{{ item['text_html'] }}</td>
