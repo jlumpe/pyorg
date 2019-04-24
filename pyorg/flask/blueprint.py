@@ -7,6 +7,8 @@ from flask import (
 )
 import jinja2
 
+from .base import orginterface
+
 
 pyorg_flask = Blueprint('pyorg', __name__, template_folder='templates')
 
@@ -45,23 +47,12 @@ def make_toc(root):
 
 def view_org_file(path):
 	path = Path(path)
-	orgfile = current_app.config["ORG_DIR"] / path
+	abspath = orginterface.get_abs_path(path)
 
-	if not orgfile.is_file():
+	if not abspath.is_file():
 		return render_template('orgfile-404.html.j2', file=str(path)), 404
 
-	from pyorg.elisp import E
-	from .app import emacs
-	el = E.with_current_buffer(
-		E.find_file_noselect(str(orgfile.absolute())),
-		E.org_json_encode_node(E.org_element_parse_buffer())
-	)
-	result = emacs.getresult(el, encode=False)
-
-	from pyorg.ast import org_node_from_json, assign_outline_ids
-	data = json.loads(result)
-	content = org_node_from_json(data)
-	assign_outline_ids(content)
+	content = orginterface.read_org_file(path, assign_ids=True)
 
 	from pyorg.html import OrgHtmlConverter
 	converter = OrgHtmlConverter()
@@ -73,21 +64,21 @@ def view_org_file(path):
 		ast=content,
 		file_content=html,
 		file_name=path.name,
-		file_title=content.title or path.stem,
+		file_title=content.title or abspath.stem,
 		parents=path.parent.parts,
-		source_json=json.dumps(data, indent=4, sort_keys=True),
+		# source_json=json.dumps(data, indent=4, sort_keys=True),
 		toc=make_toc(content),
 	)
 
 
 def view_org_directory(path):
 	path = Path(path)
-	fullpath = current_app.config["ORG_DIR"] / path
+	abspath = orginterface.get_abs_path(path)
 
 	dirs = []
 	files = []
 
-	for item in fullpath.iterdir():
+	for item in abspath.iterdir():
 		if item.name.startswith('.'):
 			continue
 
@@ -99,9 +90,6 @@ def view_org_directory(path):
 
 	*parents, dirname = ['root', *path.parts]
 
-	print(repr(parents))
-	print(repr(dirname))
-
 	return render_template(
 		'dirindex.html.j2',
 		dirname=dirname,
@@ -112,37 +100,28 @@ def view_org_directory(path):
 
 
 def get_other_file(filepath):
-	fullpath = Path(current_app.config["ORG_DIR"]) / filepath
+	abspath = orginterface.get_abs_path(filepath)
 
-	if not fullpath.exists():
+	if not abspath.exists():
 		abort(404)
 
-	if fullpath.is_dir():
+	if abspath.is_dir():
 		return redirect(url_for('viewfile', path=filepath + '/'))
 
-	return send_file(str(fullpath))
+	return send_file(str(abspath))
 
 
 @pyorg_flask.route('/agenda')
 def agenda():
 
-	from pyorg.elisp import E
-	from .app import emacs
-	el = E.org_json_with_agenda_buffer('t',
-		E.org_json_encode_agenda_buffer()
-	)
-	result = emacs.getresult(el, encode=False)
-	items = json.loads(result)
+	items = orginterface.agenda()
 
 	from pyorg.html import OrgHtmlConverter
 	converter = OrgHtmlConverter()
 
-	from pyorg.ast import org_node_from_json, parse_tags
 	for item in items:
-		node = item['node'] = org_node_from_json(item['node'])
-		text = converter.make_headline_text(node)
+		text = converter.make_headline_text(item['node'])
 		item['text_html'] = text.toprettyxml()
-		item['tags'] = parse_tags(item['tags'] or '')
 
 	items.sort(key=lambda item: (-item['priority'], item['file-relative'], *item['path']))
 
