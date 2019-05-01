@@ -31,7 +31,7 @@ test_requirements = ['pytest']
 setup(
 	name='pyorg',
 	version=version,
-	description='Package for woring with Emacs org-mode files',
+	description='Package for working with Emacs org-mode files',
 	long_description=readme_contents,
 	author='Jared Lumpe',
 	author_email='mjlumpe@gmail.com',
