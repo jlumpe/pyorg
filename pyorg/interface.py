@@ -7,25 +7,20 @@ from .emacs import EmacsInterface, E
 from .ast import org_node_from_json, parse_tags, assign_outline_ids
 
 
-class OrgInterface:
-	"""Interface to org mode.
 
-	Attributes
-	----------
-	emacs : pyorg.emacs.EmacsInterface
-	orgdir : pathlib.Path
+
+
+
+
+class OrgDirectory:
+	"""The directory where the user's org files are kept.
+
+	path : pathlib.Path
 		Absolute path to org directory.
 	"""
 
-	def __init__(self, emacs=None, orgdir=None):
-		self.emacs = emacs or EmacsInterface()
-
-		if orgdir is None:
-			orgdir = self.emacs.getresult('org-directory')
-
-		self.orgdir = Path(orgdir).expanduser().absolute()
-
-		self.export_dir = None if export_dir is None else Path(export_dir).resolve()
+	def __init__(self, path):
+		self.path = Path(path).expanduser().absolute()
 
 	def get_abs_path(self, path):
 		"""Get absolute path from path relative to org directory.
@@ -45,7 +40,7 @@ class OrgInterface:
 		if os.path.isabs(path):
 			raise ValueError('Paths should be relative to org directory.')
 
-		path = self.orgdir / os.path.normpath(path)
+		path = self.path / os.path.normpath(path)
 
 		if '..' in path.parts:
 			raise ValueError('Path must be contained within org directory')
@@ -68,11 +63,41 @@ class OrgInterface:
 		-------
 			Iterator over :class:`pathlib.Path` instances.
 		"""
-		abspath = self.orgdir if path is None else self.get_abs_path(path)
+		abspath = self.path if path is None else self.get_abs_path(path)
 		pattern = '**/*.org' if recursive else '*.org'
 
 		for file in abspath.glob(pattern):
-			yield file.relative_to(self.orgdir)
+			yield file.relative_to(self.path)
+
+
+class OrgInterface:
+	"""Interface to org mode.
+
+	Attributes
+	----------
+	emacs : pyorg.emacs.EmacsInterface
+	orgdir : .OrgDirectory
+		Directory org files are read from.
+	export_dir : pathlib.Path
+		Directory org file data is exported to.
+	"""
+
+	def __init__(self, emacs=None, orgdir=None, export_dir=None):
+		"""
+		Parameters
+		----------
+		emacs : pyorg.emacs.EmacsInterface
+		orgdir : pathlib.Path
+			Absolute path to org directory.
+		export_dir : pathlib.Path
+			Directory org file data is exported to.
+		"""
+		self.emacs = emacs or EmacsInterface()
+
+		if orgdir is None:
+			orgdir = self.emacs.getresult('org-directory')
+
+		self.orgdir = OrgDirectory(orgdir)
 
 	def _read_file_direct(self, file):
 		"""Read in JSON data for org file directly from Emacs."""
@@ -82,6 +107,36 @@ class OrgInterface:
 		)
 		result = self.emacs.getresult(el, encode=False)
 		return json.loads(result)
+
+	def read_org_file_direct(self, path, raw=False):
+		"""Read and parse an org file directly from Emacs.
+
+		Always reads the current file and does not use cached data, or perform
+		any additional processing other than parsing.
+
+		Parameters
+		----------
+		path : str or pathlib.Path
+			File path relative to org directory.
+		raw : bool
+			Don't parse and just return raw JSON exported from Emacs.
+
+		Returns
+		-------
+		pyorg.ast.OrgNode or dict
+
+		Raises
+		------
+		FileNotFoundError
+		"""
+		path = self.orgdir.get_abs_path(path)
+
+		if not path.is_file():
+			raise FileNotFoundError(str(path))
+
+		data = self._read_file_direct(path)
+
+		return data if raw else org_node_from_json(data)
 
 	def read_org_file(self, path, assign_ids=True):
 		"""Read and parse an org file.
@@ -101,18 +156,22 @@ class OrgInterface:
 		------
 		FileNotFoundError
 		"""
-		path = self.get_abs_path(path)
-
-		if not path.is_file():
-			raise FileNotFoundError(str(path))
-
-		data = self._read_file_direct(path)
-		node = org_node_from_json(data)
+		node = self.read_org_file_direct(path)
 
 		if assign_ids:
 			assign_outline_ids(node)
 
 		return node
+
+	def edit_file(self, path):
+		"""Open a file in the org directory for editing in Emacs.
+
+		Parameters
+		----------
+		path : str or pathlib.Path
+			File path relative to org directory.
+		"""
+		raise NotImplementedError()
 
 	def agenda(self, key='t'):
 		"""TODO Read agenda information.
