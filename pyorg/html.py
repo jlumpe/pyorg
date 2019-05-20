@@ -167,6 +167,10 @@ class OrgHtmlConverter:
 		'center-block': 'div',  # Contains paragraph node?
 		'timestamp': 'span',
 		'statistics-cookie': 'span',
+		'fixed-width': 'pre',
+		'babel-call': None,
+		'horizontal-rule': 'hr',
+		'radio-target': 'span',  # TODO
 	}
 
 	INLINE_NODES = frozenset({
