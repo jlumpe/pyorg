@@ -283,7 +283,7 @@ def _node_from_json(data, **kw):
 	# Parse child nodes first
 	props = _mapping_from_json(data['properties'], **kw)
 	contents = [_from_json(c, **kw) for c in data['contents']]
-	keywords = _mapping_from_json(data['keywords'], **kw)
+	keywords = _mapping_from_json(data.get('keywords', {}), **kw)
 
 	cls = NODE_CLASSES.get(type_, OrgNode)
 	node = cls(type_, props=props, contents=contents, keywords=keywords)
