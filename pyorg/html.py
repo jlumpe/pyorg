@@ -3,6 +3,7 @@
 from collections import ChainMap
 from html import escape
 from io import StringIO
+import re
 
 from .ast import ORG_ALL_OBJECTS, get_node_type
 
@@ -463,22 +464,17 @@ class OrgHtmlConverter:
 	def _convert_latex_fragment(self, node, ctx):
 		value = node['value']
 
-		import re
+		# Remove delimiters, if any
 		match = re.fullmatch(r'(\$\$?|\\[[(])(.*?)(\$\$?|\\[\])])', value, re.S)
-		d1, latex, d2 = match.groups()
-
-		if d1 in ('$$', '\\['):
-			d1, d2 = self.config['latex_delims']
-			text = d1 + latex + d2
-
-		elif d1 in ('$', '\\('):
-			d1, d2 = self.config['latex_inline_delims']
-			text = d1 + latex + d2
-
+		if match:
+			d1, latex, d2 = match.groups()
+			inline = d1 in ('$', '\\(')
 		else:
-			assert False
+			latex = value
+			inline = True
 
-		return text
+		d1, d2 = self.config['latex_inline_delims' if inline else 'latex_delims']
+		return d1 + latex + d2
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
