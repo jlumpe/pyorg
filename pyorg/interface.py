@@ -47,7 +47,7 @@ class OrgDirectory:
 
 		return path
 
-	def list_files(self, path=None, recursive=False):
+	def list_files(self, path=None, recursive=False, hidden=False):
 		"""List org files within the org directory.
 
 		Paths are relative to the org directory.
@@ -58,6 +58,8 @@ class OrgDirectory:
 			Optional subdirectory to search through.
 		recursive : bool
 			Recurse through subdirectories.
+		hidden : bool
+			Include hidden files.
 
 		Returns
 		-------
@@ -67,7 +69,8 @@ class OrgDirectory:
 		pattern = '**/*.org' if recursive else '*.org'
 
 		for file in abspath.glob(pattern):
-			yield file.relative_to(self.path)
+			if hidden or not file.name.startswith('.'):
+				yield file.relative_to(self.path)
 
 
 class OrgInterface:
