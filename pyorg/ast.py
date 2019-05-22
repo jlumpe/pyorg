@@ -151,31 +151,25 @@ class OrgNode:
 		else:
 			raise TypeError('Expected str or int, got %r' % type(key))
 
-	def dump(self, index=None, indent=''):
+	def dump(self, index=None, indent='  ', _level=0):
 		"""Print a debug representation of the node and its descendants."""
-		def print_(*args):
-			print(indent, end='')
-			print(*args)
+		print(indent * _level, end='')
 
 		if index is None:
-			print_(self.type)
+			print(self.type)
 
 		else:
-			print_(index, self.type)
+			print(index, self.type)
 
 		for key in sorted(self.props):
 			value = self.props[key]
-			print_('  :%-10s : %r' % (key, value))
-
-		print_()
+			print('%s:%-15s = %r' % (indent * (_level + 1), key, value))
 
 		for i, child in enumerate(self.contents):
 			if isinstance(child, OrgNode):
-				child.dump(i, indent + '  ')
+				child.dump(i, indent=indent, _level=_level + 1)
 			else:
-				print('%s%d %r' % (indent, i, child))
-
-		print_()
+				print('%s%d %r' % (indent * (_level + 1), i, child))
 
 
 @node_cls('org-data')
