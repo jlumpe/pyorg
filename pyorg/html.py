@@ -14,17 +14,29 @@ class HtmlElement:
 	Attributes
 	----------
 	tag : str
+		HTML tag name (minus angle brackets).
 	children : list
+		List of child elements (``HtmlElement`` or strings).
 	attrs : dict
+		Mapping from attributes names to values (both strings).
 	inline : bool
+		Whether to render children in an inline context. If False each child
+		will be rendered on its own line. If True whitespace will only be added
+		before/after children according to the :attr:`post_ws` attribute of the
+		child.
 	classes : list
+		List of class names present in the "class" attribute. Assignable property.
+	post_ws : bool
+		Whether to add whitespace after the tag when rendering in an inline
+		context.
 	"""
 
-	def __init__(self, tag, children=None, attrs=None, inline=False):
+	def __init__(self, tag, children=None, attrs=None, inline=False, post_ws=False):
 		self.tag = tag
 		self.children = list(children or [])
 		self.attrs = dict(attrs or [])
 		self.inline = inline
+		self.post_ws = post_ws
 
 	@property
 	def classes(self):
@@ -76,6 +88,8 @@ def _write_html_recursive(stream, elem, indent, depth, inline=False):
 			stream.write(escape(child))
 		else:
 			_write_html_recursive(stream, child, indent=indent, depth=depth + 1, inline=inline)
+			if inline and child.post_ws:
+				stream.write(' ')
 
 	if elem.children and not inline:
 		stream.write('\n')
@@ -234,13 +248,11 @@ class OrgHtmlConverter:
 	_convert_node = dispatch_node_type()(_convert_node_default)
 	_convert_node.__doc__ = """Recursively _convert an org AST node to HTML."""
 
-	def _make_elem_base(self, tag, text=None, attrs=None, classes=None, inline=False):
+	def _make_elem_base(self, tag, text=None, classes=None, **kwargs):
 		"""Create a new HTML element."""
-		html = HtmlElement(tag, inline=inline)
+		html = HtmlElement(tag, **kwargs)
 		if text is not None:
 			html.children.append(text)
-		if attrs is not None:
-			html.attrs.update(attrs)
 		if classes is not None:
 			html.classes = classes
 		return html
@@ -256,7 +268,9 @@ class OrgHtmlConverter:
 			if tag is None:
 				return None
 
-		kwargs.setdefault('inline', node.type in self.INLINE_NODES)
+		if node.type in self.INLINE_NODES:
+			kwargs.setdefault('inline', True)
+			kwargs.setdefault('post_ws', node.props.get('post-blank', 0) > 0)
 
 		html = self._make_elem_base(tag, **kwargs)
 		html.add_class('org-node org-%s' % node.type)
@@ -321,8 +335,8 @@ class OrgHtmlConverter:
 				'span',
 				text=todo_kw,
 				classes='org-todo org-todo-%s' % todo_type,
+				post_ws=True,
 			))
-			header.children.append(' ')
 
 			priority_code = node.props['priority']
 
@@ -332,8 +346,8 @@ class OrgHtmlConverter:
 					'span',
 					text=priority_char,
 					classes='org-todo-priority org-todo-priority-%s' % priority_char,
+					post_ws=True,
 				))
-				header.children.append(' ')
 
 		# Text
 		header_text = self.make_headline_text(node, ctx, dom=True)
@@ -349,9 +363,9 @@ class OrgHtmlConverter:
 					'span',
 					text=tag,
 					classes='org-tag',
+					post_ws=True,
 				))
 
-			header.children.append(' ')
 			header.children.append(tags_elem)
 
 		return html
