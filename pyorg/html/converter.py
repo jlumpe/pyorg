@@ -139,7 +139,8 @@ class OrgHtmlConverter:
 
 	def _convert_node_default(self, node, ctx, **kwargs):
 		html = self._make_elem(node, ctx, **kwargs)
-		self._add_children(html, node.contents, ctx)
+		if html is not None:
+			self._add_children(html, node.contents, ctx)
 		return html
 
 	_convert_node = dispatch_node_type()(_convert_node_default)
