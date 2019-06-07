@@ -94,6 +94,12 @@ class OrgHtmlConverter:
 		'latex_delims': ('$$', '$$'),
 		'latex_inline_delims': (r'\(', r'\)'),
 		'date_format': '%Y-%m-%d %a',
+		'resolve_link': {},
+	}
+
+	DEFAULT_RESOLVE_LINK = {
+		'http': True,
+		'https': True,
 	}
 
 	def __init__(self, config=None, **kw):
@@ -343,7 +349,7 @@ class OrgHtmlConverter:
 	def _convert_entity(self, node, ctx):
 		return node['utf-8']
 
-	def _convert_link_default(self, node, ctx, url='#'):
+	def _convert_link_default(self, node, ctx, url=None):
 		html = self._make_elem_default(node, ctx, classes='org-linktype-' + node['type'])
 
 		# Add contents (these come from description part of link)
@@ -354,19 +360,38 @@ class OrgHtmlConverter:
 			html.children.append(node['raw-link'])
 			html.add_class('org-link-raw')
 
-		html.attrs['href'] = url
+		if url is not None:
+			html.attrs['href'] = url
+
 		return html
 
 	@_convert_node.register('link')
 	def _convert_link(self, node, ctx):
-		linktype = node['type']
+		url = self.resolve_link(node['type'], node['raw-link'], node['path'])
 
-		if linktype in ('http', 'https'):
-			return self._convert_link_default(node, ctx, url=node['path'])
+		if url:
+			html = self._convert_link_default(node, ctx, url=url)
+		else:
+			html = self._convert_link_default(node, ctx)
+			self._add_error(html, text="Can't convert link %r!" % node['raw-link'])
 
-		html = self._convert_link_default(node, ctx)
-		self._add_error(html, text="Can't convert link %r!" % node['raw-link'])
 		return html
+
+	def resolve_link(self, linktype, raw, path, ctx=None):
+		"""Resolve link into a proper URL."""
+		resolve_link = ChainMap(self.config.get('resolve_link', {}), self.DEFAULT_RESOLVE_LINK)
+		resolve = resolve_link.get(linktype)
+
+		if resolve is None or resolve is False:
+			return None
+
+		if resolve is True:
+			return raw
+
+		if not callable(resolve):
+			raise TypeError('resolve_link value must be None, bool or callable')
+
+		return resolve(linktype, raw, path)
 
 	@_convert_node.register('code')
 	def _convert_code(self, node, ctx):
