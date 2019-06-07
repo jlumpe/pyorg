@@ -95,6 +95,7 @@ class OrgHtmlConverter:
 		'latex_inline_delims': (r'\(', r'\)'),
 		'date_format': '%Y-%m-%d %a',
 		'resolve_link': {},
+		'image_extensions': ('.png', '.jpg', '.gif', '.tiff'),
 	}
 
 	DEFAULT_RESOLVE_LINK = {
@@ -376,12 +377,28 @@ class OrgHtmlConverter:
 	def _convert_link(self, node, ctx):
 		url = self.resolve_link(node['type'], node['raw-link'], node['path'])
 
+		if url and node['type'] == 'file':
+			return self._convert_file_link(node, ctx, url)
+
 		if url:
 			html = self._convert_link_default(node, ctx, url=url)
 		else:
 			html = self._convert_link_default(node, ctx)
 			self._add_error(html, text="Can't convert link %r!" % node['raw-link'])
 
+		return html
+
+	def _convert_file_link(self, node, ctx, url):
+		path = Path(node['path'])
+
+		if path.suffix in self.config['image_extensions'] and not node.contents:
+			return self._convert_image(node, ctx, url)
+
+		return self._convert_link_default(node, ctx, url)
+
+	def _convert_image(self, node, ctx, url):
+		html = self._make_elem_default(node, ctx, tag='img')
+		html.attrs['src'] = url
 		return html
 
 	def resolve_link(self, linktype, raw, path, ctx=None):
