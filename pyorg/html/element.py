@@ -2,6 +2,23 @@ from html import escape
 from io import StringIO
 
 
+class TextNode:
+	"""Text node to be used within HTML.
+
+	Attributes
+	----------
+	text : str
+		Wrapped text.
+	post_ws : bool
+		Whether to add whitespace after the tag when rendering in an inline
+		context.
+	"""
+
+	def __init__(self, text, post_ws=False):
+		self.text = text
+		self.post_ws = post_ws
+
+
 class HtmlElement:
 	"""Lightweight class to represent an HTML element.
 
@@ -78,12 +95,21 @@ def _write_html_recursive(stream, elem, indent, depth, inline=False):
 			stream.write('\n')
 			stream.write(indent * (depth + 1))
 
+		post_ws = False
+
 		if isinstance(child, str):
 			stream.write(escape(child))
-		else:
+		elif isinstance(child, TextNode):
+			stream.write(escape(child.text))
+			post_ws = child.post_ws
+		elif isinstance(child, HtmlElement):
 			_write_html_recursive(stream, child, indent=indent, depth=depth + 1, inline=inline)
-			if inline and child.post_ws:
-				stream.write(' ')
+			post_ws = child.post_ws
+		else:
+			raise TypeError(type(child))
+
+		if inline and post_ws:
+			stream.write(' ')
 
 	if elem.children and not inline:
 		stream.write('\n')

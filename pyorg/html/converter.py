@@ -2,7 +2,7 @@ from collections import ChainMap
 import re
 
 from pyorg.ast import ORG_ALL_OBJECTS, get_node_type
-from .element import HtmlElement
+from .element import HtmlElement, TextNode
 
 
 class DispatchNodeType:
@@ -200,6 +200,13 @@ class OrgHtmlConverter:
 			if html is not None:
 				parent.children.append(html)
 
+	def _make_text(self, node, text, ct):
+		"""Creates plain text from org node.
+
+		Takes care of adding whitespace after if needed.
+		"""
+		return TextNode(text, post_ws=node.props.get('post-blank', 0) > 0)
+
 	def make_headline_text(self, node, ctx=None, dom=False):
 		"""Make HTML element for text content of headline node."""
 		elem = self._make_elem_base('span', classes='org-header-text')
@@ -347,7 +354,7 @@ class OrgHtmlConverter:
 
 	@_convert_node.register('entity')
 	def _convert_entity(self, node, ctx):
-		return node['utf-8']
+		return self._make_text(node, node['utf-8'], ctx)
 
 	def _convert_link_default(self, node, ctx, url=None):
 		html = self._make_elem_default(node, ctx, classes='org-linktype-' + node['type'])
@@ -411,7 +418,7 @@ class OrgHtmlConverter:
 			inline = True
 
 		d1, d2 = self.config['latex_inline_delims' if inline else 'latex_delims']
-		return d1 + latex + d2
+		return self._make_text(d1 + latex + d2)
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
