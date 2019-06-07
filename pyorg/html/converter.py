@@ -107,7 +107,7 @@ class OrgHtmlConverter:
 			config = {}
 		if kw:
 			config = {**config, **kw}
-		self.config = ChainMap(self.DEFAULT_CONFIG, config)
+		self.config = ChainMap(config, self.DEFAULT_CONFIG)
 
 	def default_tag(self, type_):
 		try:
