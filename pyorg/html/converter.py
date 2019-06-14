@@ -439,15 +439,27 @@ class OrgHtmlConverter:
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
+		params = node.props.get('parameters', {})
+		print('params = %r' % params)
+
+		export = params.get('export', 'both')
+		export_code = export in ('code', 'both')
+		export_results = export in ('results', 'both')
+
+		if not export_code and not export_results:
+			return None
+
 		html = self._make_elem_default(node, ctx, tag='div')
 
 		# Source code in "value" property
-		code = self._make_elem_base('pre', text=node['value'], inline=True)
-		code.add_class('org-src-block-value')
-		html.children.append(code)
+		if export_code:
+			code = self._make_elem_base('pre', text=node['value'], inline=True)
+			code.add_class('org-src-block-value')
+			html.children.append(code)
 
 		# The contents are the results of executing the block?
-		self._add_children(html, node.contents, ctx)
+		if export_results:
+			self._add_children(html, node.contents, ctx)
 
 		return html
 
