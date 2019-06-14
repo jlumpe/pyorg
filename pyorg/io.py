@@ -3,6 +3,9 @@
 from .ast import OrgNode, NODE_CLASSES
 
 
+JSON_OBJ_DATA_TYPE_KEY = '$$data_type'
+
+
 def _node_from_json(data, **kw):
 	type_ = data['org_node_type']
 
@@ -22,10 +25,14 @@ def _from_json(data, **kw):
 		return [_from_json(item, **kw) for item in  data]
 
 	if isinstance(data, dict):
-		if 'org_node_type' in data:
+		data = dict(data)
+		datatype = data.pop(JSON_OBJ_DATA_TYPE_KEY, 'mapping')
+		if datatype == 'org':
 			return _node_from_json(data, **kw)
-		if '_error' in data:
-			print('Parse error:', data['_error'])
+		if datatype == 'mapping':
+			return _mapping_from_json(data, **kw)
+		if datatype == 'error':
+			print('Parse error:', data['message'])
 			return None
 		raise ValueError(data)
 
@@ -36,7 +43,7 @@ def _from_json(data, **kw):
 
 
 def _mapping_from_json(data, **kw):
-	return {k: _from_json(v, **kw) for k, v in data.items()}
+	return {k: _from_json(v, **kw) for k, v in data.items() if k != JSON_OBJ_DATA_TYPE_KEY}
 
 
 def org_node_from_json(data):
