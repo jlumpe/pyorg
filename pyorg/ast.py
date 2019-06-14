@@ -273,7 +273,7 @@ class OrgOutlineNode(OrgNode):
 		# Default title
 		if title is None:
 			if self.type.name == 'headline':
-				title = self['raw-value']
+				title = as_plaintext(self['title'], blanks=True)
 			else:
 				title = self.section.keywords.get('TITLE')
 
@@ -453,3 +453,79 @@ def dispatch_node_type(parent=None):
 		return DispatchNodeType(default, registry)
 
 	return decorator
+
+
+def as_plaintext(arg, blanks=False, sep=None):
+	"""Convert an org node or list of nodes to plaintext.
+
+	Parameters
+	----------
+	arg : .OrgNode, str, list
+		Org node, string, or list of these. Strings are returned unmodified.
+	blanks : bool
+		Prepend and append whitespace according to the ``pre-blank`` and
+		``post-blank`` properties.
+	sep : str
+		Separator to use when converting recursively.
+
+	Returns
+	-------
+	str
+	"""
+	if isinstance(arg, OrgNode):
+		txt = _get_node_plaintext(arg)
+		if blanks:
+			pre = ' ' * arg.props.get('pre-blank', 0)
+			post = ' ' * arg.props.get('post-blank', 0)
+			txt = pre + txt + post
+		return txt
+
+	if isinstance(arg, str):
+		return arg
+
+	if sep is None:
+		sep = '' if blanks else ' '
+
+	return sep.join(as_plaintext(item, blanks=blanks, sep=sep) for item in arg)
+
+
+@dispatch_node_type()
+def _get_node_plaintext(node):
+	return "<Can't convert %s node to plain text>" % node.type.name
+
+
+@_get_node_plaintext.register(['section'])
+def _get_element_contents_plaintext(node):
+	return as_plaintext(node.contents, sep='\n\n')
+
+
+@_get_node_plaintext.register([nt.name for nt in ORG_NODE_TYPES.values() if nt.is_object_container])
+def _get_object_container_plaintext(node):
+	return as_plaintext(node.contents, blanks=True)
+
+
+@_get_node_plaintext.register([
+	'code', 'comment', 'comment-block', 'latex-fragment',
+	'verbatim', 'example-block', 'statistics-cookie', 'fixed-width', 'src-block'
+])
+def _get_node_plaintext_from_value(node):
+	return node['value']
+
+@_get_node_plaintext.register('line-break')
+def _get_line_break_plaintext(node):
+	return '\n'
+
+@_get_node_plaintext.register('timestamp')
+def _get_timestamp_plaintext(node):
+	return node['raw-value']
+
+@_get_node_plaintext.register('link')
+def _get_link_plaintext(node):
+	if node.contents:
+		return _get_object_container_plaintext(node)
+	else:
+		return node['raw-link']
+
+@_get_node_plaintext.register('entity')
+def _get_entity_plaintext(node):
+	return node['utf-8']
