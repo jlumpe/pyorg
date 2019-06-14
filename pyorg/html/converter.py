@@ -416,10 +416,7 @@ class OrgHtmlConverter:
 
 		return html
 
-	@_convert_node.register('verbatim')
-	@_convert_node.register('example-block')
-	@_convert_node.register('statistics-cookie')
-	@_convert_node.register('fixed-width')
+	@_convert_node.register(['verbatim', 'example-block', 'statistics-cookie', 'fixed-width'])
 	def _convert_node_with_value(self, node, ctx):
 		"""Convert a node with "value" property that should be its text content."""
 		value = node['value']

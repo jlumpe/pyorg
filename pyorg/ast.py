@@ -423,25 +423,26 @@ class DispatchNodeType:
 		typename = as_node_type(type_).name
 		method = self.registry.get(typename, self.default)
 		if self.instance is not None:
-			method.__get__(self.instance, type(self.instance))
+			return method.__get__(self.instance, type(self.instance))
 		return method
 
-	def register(self, typename):
+	def register(self, typenames):
 		"""Decorator to register an implementation for the given node type."""
+		if isinstance(typenames, str):
+			typenames = [typenames]
+		if not all(isinstance(tn, str) for tn in typenames):
+			raise TypeError('Type names must be strings')
+
 		def decorator(method):
-			self.registry[typename] = method
+			for tn in typenames:
+				self.registry[tn] = method
 			return method
 
 		return decorator
 
-	def __call__(self, *args, **kwargs):
-		if self.instance is not None:
-			return self._call(self.instance, *args, **kwargs)
-		return self._call(*args, **kwargs)
-
-	def _call(self, instance, node, *args, **kwargs):
+	def __call__(self, node, *args, **kwargs):
 		method = self.dispatch(node.type.name)
-		return method(instance, node, *args, **kwargs)
+		return method(node, *args, **kwargs)
 
 
 def dispatch_node_type(parent=None):
