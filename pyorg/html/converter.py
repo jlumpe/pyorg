@@ -350,8 +350,9 @@ class OrgHtmlConverter:
 		return self._convert_link_default(node, ctx, url)
 
 	def _convert_image(self, node, ctx, url):
-		html = self._make_elem_default(node, ctx, tag='img')
+		html = self._make_elem_default(node, ctx, classes='org-img-link', tag='img')
 		html.attrs['src'] = url
+		html.attrs['title'] = node['path']
 		return html
 
 	def resolve_link(self, linktype, raw, path, ctx=None):
