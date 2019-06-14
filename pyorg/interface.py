@@ -4,7 +4,8 @@ from pathlib import Path
 import json
 
 from .emacs import EmacsInterface, E
-from .ast import org_node_from_json, parse_tags, assign_outline_ids
+from .ast import parse_tags, assign_outline_ids
+from .io import org_node_from_json
 
 
 
