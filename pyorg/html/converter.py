@@ -2,59 +2,8 @@ from collections import ChainMap
 import re
 from pathlib import Path
 
-from pyorg.ast import ORG_NODE_TYPES, get_node_type, as_node_type
+from pyorg.ast import ORG_NODE_TYPES, get_node_type, as_node_type, dispatch_node_type
 from .element import HtmlElement, TextNode
-
-
-class DispatchNodeType:
-
-	def __init__(self, default, registry=None, instance=None):
-		self.default = default
-		self.registry = {} if registry is None else registry
-		self.instance = instance
-
-	def bind(self, instance):
-		return DispatchNodeType(self.default, self.registry, instance)
-
-	def unbind(self):
-		return DispatchNodeType(self.default, self.registry, None)
-
-	def __get__(self, instance, owner):
-		if instance is None:
-			return self
-		return self.bind(instance)
-
-	def dispatch(self, type_):
-		typename = as_node_type(type_).name
-		method = self.registry.get(typename, self.default)
-		if self.instance is not None:
-			method.__get__(self.instance, type(self.instance))
-		return method
-
-	def register(self, typename):
-		def decorator(method):
-			self.registry[typename] = method
-			return method
-
-		return decorator
-
-	def __call__(self, *args, **kwargs):
-		if self.instance is not None:
-			return self._call(self.instance, *args, **kwargs)
-		return self._call(*args, **kwargs)
-
-	def _call(self, instance, node, *args, **kwargs):
-		method = self.dispatch(node.type.name)
-		return method(instance, node, *args, **kwargs)
-
-
-def dispatch_node_type(parent=None):
-	registry = {} if parent is None else ChainMap(parent, {})
-
-	def decorator(default):
-		return DispatchNodeType(default, registry)
-
-	return decorator
 
 
 class OrgHtmlConverter:
