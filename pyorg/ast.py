@@ -8,52 +8,111 @@ syntax.
 import re
 from collections.abc import Iterable
 from datetime import datetime
+from typing import NamedTuple
 
 
-# org-element-all-elements
-# "An element defines syntactical parts that are at the same level as a paragraph,
-# i.e. which cannot contain or be included in a paragraph."
-ORG_ALL_ELEMENTS = frozenset({
-	'babel-call', 'center-block', 'clock', 'comment', 'comment-block',
-	'diary-sexp', 'drawer', 'dynamic-block', 'example-block', 'export-block',
-	'fixed-width', 'footnote-definition', 'headline', 'horizontal-rule',
-	'inlinetask', 'item', 'keyword', 'latex-environment', 'node-property',
-	'paragraph', 'plain-list', 'planning', 'property-drawer', 'quote-block',
-	'section', 'special-block', 'src-block', 'table', 'table-row', 'verse-block',
-})
+_OrgNodeTypeBase = NamedTuple('OrgNodeType', [
+	('name', str),
+	('is_element', bool),
+	('is_greater_element', bool),
+	('is_recursive', bool),
+	('is_object_container', bool),
+])
 
-# org-element-greater-elements
-# "Greater elements are all parts that can contain an element."
-ORG_GREATER_ELEMENTS = frozenset({
-	'center-block', 'drawer', 'dynamic-block', 'footnote-definition', 'headline',
-	'inlinetask', 'item', 'plain-list', 'property-drawer', 'quote-block',
-	'section', 'special-block', 'table',
-})
 
-# org-element-all-objects
-# "An object is a part that could be included in an element."
-ORG_ALL_OBJECTS = frozenset({
-	'bold', 'code', 'entity', 'export-snippet', 'footnote-reference',
-	'inline-babel-call', 'inline-src-block', 'italic', 'line-break',
-	'latex-fragment', 'link', 'macro', 'radio-target', 'statistics-cookie',
-	'strike-through', 'subscript', 'superscript', 'table-cell', 'target',
-	'timestamp', 'underline', 'verbatim',
-})
+class OrgNodeType(_OrgNodeTypeBase):
+	"""The properties of an org AST node type.
 
-# org-element-object-containers
-ORG_OBJECT_CONTAINERS = frozenset({
-	'bold', 'footnote-reference', 'italic', 'link', 'subscript', 'radio-target',
-	'strike-through', 'superscript', 'table-cell', 'underline', 'paragraph',
-	'table-row', 'verse-block',
-})
+	Attributes
+	----------
+	name : str
+		The unique name of this node type.
+	is_element : bool
+		Whether this node type is an element. "An element defines syntactical
+		parts that are at the same level as a paragraph, i.e. which cannot
+		contain or be included in a paragraph."
+	is_object : bool
+		Whether this node type is an object. All nodes which are not elements
+		are objects. "An object is a part that could be included in an element."
+	is_greater_element : bool
+		Whether this node type is a greater element. "Greater elements are all
+		parts that can contain an element."
+	is_recursive : bool
+		Whether this node type is a recursive object.
+	is_object_container : bool
+		Whether this node type is an object container, i.e. can directly contain
+		objects.
 
-# org-element-recursive-objects
-ORG_RECURSIVE_OBJECTS = frozenset({
-	'bold', 'footnote-reference', 'italic', 'link', 'subscript', 'radio-target',
-	'strike-through', 'superscript', 'table-cell', 'underline',
-})
+	References
+	----------
+	`Org Syntax <https://orgmode.org/worg/dev/org-syntax.html>`_
+	"""
 
-ORG_ALL_NODE_TYPES = set.union(*map(set, [ORG_ALL_ELEMENTS, ORG_ALL_OBJECTS]))
+	@property
+	def is_object(self):
+		return not self.is_element
+
+	def __repr__(self):
+		return '%s(%r)' % (type(self).__name__, self.name)
+
+
+#: Mapping from names of all AST node types to :class:`.OrgNodeType` instances.
+ORG_NODE_TYPES = {nt.name: nt for nt in [
+	#           Name                   Element Greater Recursive Container
+	OrgNodeType('org-data',            True,   True,   False,    False,    ),
+	OrgNodeType('babel-call',          True,   False,  False,    False,    ),
+	OrgNodeType('center-block',        True,   True,   False,    False,    ),
+	OrgNodeType('clock',               True,   False,  False,    False,    ),
+	OrgNodeType('comment',             True,   False,  False,    False,    ),
+	OrgNodeType('comment-block',       True,   False,  False,    False,    ),
+	OrgNodeType('diary-sexp',          True,   False,  False,    False,    ),
+	OrgNodeType('drawer',              True,   True,   False,    False,    ),
+	OrgNodeType('dynamic-block',       True,   True,   False,    False,    ),
+	OrgNodeType('example-block',       True,   False,  False,    False,    ),
+	OrgNodeType('export-block',        True,   False,  False,    False,    ),
+	OrgNodeType('fixed-width',         True,   False,  False,    False,    ),
+	OrgNodeType('footnote-definition', True,   True,   False,    False,    ),
+	OrgNodeType('headline',            True,   True,   False,    False,    ),
+	OrgNodeType('horizontal-rule',     True,   False,  False,    False,    ),
+	OrgNodeType('inlinetask',          True,   True,   False,    False,    ),
+	OrgNodeType('item',                True,   True,   False,    False,    ),
+	OrgNodeType('keyword',             True,   False,  False,    False,    ),
+	OrgNodeType('latex-environment',   True,   False,  False,    False,    ),
+	OrgNodeType('node-property',       True,   False,  False,    False,    ),
+	OrgNodeType('paragraph',           True,   False,  False,    True,     ),
+	OrgNodeType('plain-list',          True,   True,   False,    False,    ),
+	OrgNodeType('planning',            True,   False,  False,    False,    ),
+	OrgNodeType('property-drawer',     True,   True,   False,    False,    ),
+	OrgNodeType('quote-block',         True,   True,   False,    False,    ),
+	OrgNodeType('section',             True,   True,   False,    False,    ),
+	OrgNodeType('special-block',       True,   True,   False,    False,    ),
+	OrgNodeType('src-block',           True,   False,  False,    False,    ),
+	OrgNodeType('table',               True,   True,   False,    False,    ),
+	OrgNodeType('table-row',           True,   False,  False,    True,     ),
+	OrgNodeType('verse-block',         True,   False,  False,    True,     ),
+	OrgNodeType('bold',                False,  False,  True,     True,     ),
+	OrgNodeType('code',                False,  False,  False,    False,    ),
+	OrgNodeType('entity',              False,  False,  False,    False,    ),
+	OrgNodeType('export-snippet',      False,  False,  False,    False,    ),
+	OrgNodeType('footnote-reference',  False,  False,  True,     True,     ),
+	OrgNodeType('inline-babel-call',   False,  False,  False,    False,    ),
+	OrgNodeType('inline-src-block',    False,  False,  False,    False,    ),
+	OrgNodeType('italic',              False,  False,  True,     True,     ),
+	OrgNodeType('latex-fragment',      False,  False,  False,    False,    ),
+	OrgNodeType('line-break',          False,  False,  False,    False,    ),
+	OrgNodeType('link',                False,  False,  True,     True,     ),
+	OrgNodeType('macro',               False,  False,  False,    False,    ),
+	OrgNodeType('radio-target',        False,  False,  True,     True,     ),
+	OrgNodeType('statistics-cookie',   False,  False,  False,    False,    ),
+	OrgNodeType('strike-through',      False,  False,  True,     True,     ),
+	OrgNodeType('subscript',           False,  False,  True,     True,     ),
+	OrgNodeType('superscript',         False,  False,  True,     True,     ),
+	OrgNodeType('table-cell',          False,  False,  True,     True,     ),
+	OrgNodeType('target',              False,  False,  False,    False,    ),
+	OrgNodeType('timestamp',           False,  False,  False,    False,    ),
+	OrgNodeType('underline',           False,  False,  True,     True,     ),
+	OrgNodeType('verbatim',            False,  False,  False,    False,    ),
+]}
 
 
 #: Mapping from org element/node types to their Python class
@@ -79,7 +138,7 @@ class OrgNode:
 	Attributes
 	----------
 
-	type: str
+	type: .OrgNodeType
 		Node type, obtained from `org-element-type`.
 	props : dict
 		Dictionary of property values, obtained from `org-element-property`.
@@ -99,7 +158,12 @@ class OrgNode:
 	is_outline = False
 
 	def __init__(self, type_, props=None, contents=None, keywords=None, parent=None, outline=None):
+		if isinstance(type_, str):
+			type_ = ORG_NODE_TYPES[type_]
+		if not isinstance(type_, OrgNodeType):
+			raise TypeError(type(type_))
 		self.type = type_
+
 		self.props = dict(props or {})
 		self.keywords = dict(keywords or {})
 		self.contents = list(contents or [])
@@ -135,7 +199,7 @@ class OrgNode:
 			yield from self._iter_children_recursive(collection)
 
 	def __repr__(self):
-		return '%s(type=%r)' % (type(self).__name__, self.type)
+		return '%s(type=%r)' % (type(self).__name__, self.type.name)
 
 	def __len__(self):
 		return len(self.contents)
@@ -156,10 +220,10 @@ class OrgNode:
 		print(indent * _level, end='')
 
 		if index is None:
-			print(self.type)
+			print(self.type.name)
 
 		else:
-			print(index, self.type)
+			print(index, self.type.name)
 
 		for key in sorted(self.props):
 			value = self.props[key]
@@ -199,7 +263,7 @@ class OrgOutlineNode(OrgNode):
 		super().__init__(type_, *args, **kw)
 
 		# Section and child outline nodes from content
-		if self.contents and self.contents[0].type == 'section':
+		if self.contents and self.contents[0].type.name == 'section':
 			self.section = self.contents[0]
 		else:
 			self.section = None
@@ -207,7 +271,7 @@ class OrgOutlineNode(OrgNode):
 
 		# Default title
 		if title is None:
-			if type_ == 'headline':
+			if self.type.name == 'headline':
 				title = self['raw-value']
 			else:
 				title = self.section.keywords.get('TITLE')
@@ -215,7 +279,7 @@ class OrgOutlineNode(OrgNode):
 		self.title = title
 		self.id = id
 
-		self.level = self['level'] if type_ == 'headline' else 0
+		self.level = self['level'] if self.type.name == 'headline' else 0
 
 	@property
 	def outline_children(self):
@@ -252,8 +316,8 @@ class OrgTimestampNode(OrgNode):
 	"""
 
 	def __init__(self, type_, *args, **kwargs):
-		assert type_ == 'timestamp'
 		super().__init__(type_, *args, **kwargs)
+		assert self.type.name == 'timestamp'
 
 		self.begin = datetime(
 			self['year-start'],
@@ -271,9 +335,20 @@ class OrgTimestampNode(OrgNode):
 		)
 
 
-def get_node_type(obj):
+def get_node_type(obj, name=False):
 	"""Get type of AST node, returning None for other types."""
-	return obj.type if isinstance(obj, OrgNode) else None
+	if isinstance(obj, OrgNode):
+		return obj.type.name if name else obj.type
+	return None
+
+
+def as_node_type(t):
+	"""Convert to node type object, looking up strings by name."""
+	if isinstance(t, str):
+		return ORG_NODE_TYPES[t]
+	if isinstance(t, OrgNodeType):
+		return t
+	raise TypeError(type(t))
 
 
 def assign_outline_ids(root, depth=3):

@@ -1,7 +1,8 @@
 from collections import ChainMap
 import re
+from pathlib import Path
 
-from pyorg.ast import ORG_ALL_OBJECTS, get_node_type
+from pyorg.ast import ORG_NODE_TYPES, get_node_type, as_node_type
 from .element import HtmlElement, TextNode
 
 
@@ -24,14 +25,15 @@ class DispatchNodeType:
 		return self.bind(instance)
 
 	def dispatch(self, type_):
-		method = self.registry.get(type_, self.default)
+		typename = as_node_type(type_).name
+		method = self.registry.get(typename, self.default)
 		if self.instance is not None:
 			method.__get__(self.instance, type(self.instance))
 		return method
 
-	def register(self, type_):
+	def register(self, typename):
 		def decorator(method):
-			self.registry[type_] = method
+			self.registry[typename] = method
 			return method
 
 		return decorator
@@ -42,7 +44,7 @@ class DispatchNodeType:
 		return self._call(*args, **kwargs)
 
 	def _call(self, instance, node, *args, **kwargs):
-		method = self.dispatch(node.type)
+		method = self.dispatch(node.type.name)
 		return method(instance, node, *args, **kwargs)
 
 
@@ -83,12 +85,13 @@ class OrgHtmlConverter:
 		'babel-call': None,
 		'horizontal-rule': 'hr',
 		'radio-target': 'span',  # TODO
+		'property-drawer': None,
 	}
 
-	INLINE_NODES = frozenset({
-		'paragraph', 'example-block', 'fixed-width',
-		*ORG_ALL_OBJECTS,
-	})
+	INLINE_NODES = frozenset(
+		{'paragraph', 'example-block', 'fixed-width'}
+		| {nt.name for nt in ORG_NODE_TYPES.values() if nt.is_object}
+	)
 
 	DEFAULT_CONFIG = {
 		'latex_delims': ('$$', '$$'),
@@ -111,10 +114,11 @@ class OrgHtmlConverter:
 		self.config = ChainMap(config, self.DEFAULT_CONFIG)
 
 	def default_tag(self, type_):
+		type_ = as_node_type(type_)
 		try:
-			return self.TAGS[type_]
+			return self.TAGS[type_.name]
 		except KeyError:
-			return 'span' if type_ in ORG_ALL_OBJECTS else 'div'
+			return 'span' if type_.is_object else 'div'
 
 	def convert(self, node, dom=False):
 		"""Convert org node to HTML.
@@ -166,23 +170,23 @@ class OrgHtmlConverter:
 		no_default = False
 
 		if tag is None:
-			tag = self.default_tag(node.type)
-			if node.type not in self.TAGS:
+			tag = self.default_tag(node.type.name)
+			if node.type.name not in self.TAGS:
 				no_default = True
 
 			if tag is None:
 				return None
 
-		if node.type in self.INLINE_NODES:
+		if node.type.name in self.INLINE_NODES:
 			kwargs.setdefault('inline', True)
 			kwargs.setdefault('post_ws', node.props.get('post-blank', 0) > 0)
 
 		html = self._make_elem_base(tag, **kwargs)
-		html.add_class('org-node org-%s' % node.type)
+		html.add_class('org-node org-%s' % node.type.name)
 
 		# Warn about no default tag
 		if no_default:
-			msg = "Don't know how to convert node of type %r" % node.type
+			msg = "Don't know how to convert node of type %r" % node.type.name
 			self._add_error(html)
 			html.children.append(self._make_error_msg(msg))
 
@@ -303,7 +307,7 @@ class OrgHtmlConverter:
 		html = self._make_elem_default(node, ctx, tag=tag)
 
 		for item in node.contents:
-			assert item.type == 'item'
+			assert item.type.name == 'item'
 			html.children.append(self._convert_uo_list_item(item, ctx))
 
 		return html
@@ -333,7 +337,7 @@ class OrgHtmlConverter:
 		dlist = self._make_elem_default(node, ctx, tag='dl')
 
 		for item in node.children:
-			assert item.type == 'item'
+			assert item.type.name == 'item'
 
 			tag = self._make_elem_base('dt')
 			self._add_children(tag, item['tag'], ctx)
@@ -487,7 +491,7 @@ class OrgHtmlConverter:
 		blocks = [current_block]
 
 		for row in node.contents:
-			assert row.type == 'table-row'
+			assert row.type.name == 'table-row'
 
 			if row['type'] == 'rule':
 				# New block
@@ -512,7 +516,7 @@ class OrgHtmlConverter:
 				block_elem.children.append(row_elem)
 
 				for cell in row:
-					assert cell.type == 'table-cell'
+					assert cell.type.name == 'table-cell'
 
 					cell_elem = self._make_elem_base('th' if is_head else 'td')
 					row_elem.children.append(cell_elem)
