@@ -11,6 +11,8 @@ from datetime import datetime
 from typing import NamedTuple
 from collections import ChainMap
 
+from .util import SingleDispatchBase
+
 
 _OrgNodeTypeBase = NamedTuple('OrgNodeType', [
 	('name', str),
@@ -394,55 +396,15 @@ def parse_tags(string):
 	return string.split(':')
 
 
-class DispatchNodeType:
+class DispatchNodeType(SingleDispatchBase):
 	"""Generic function which dispatches on the node type of its first argument.
-
-	May be bound to an object instance as a method.
 	"""
 
-	def __init__(self, default, registry=None, instance=None):
-		self.default = default
-		self.registry = {} if registry is None else registry
-		self.instance = instance
+	def get_key(self, node):
+		return node.type.name
 
-	def bind(self, instance):
-		"""Get a copy of the function bound to the given instance as a method."""
-		return DispatchNodeType(self.default, self.registry, instance)
-
-	def unbind(self):
-		"""Get a copy of the function which is not bound to an instance."""
-		return DispatchNodeType(self.default, self.registry, None)
-
-	def __get__(self, instance, owner):
-		if instance is None:
-			return self
-		return self.bind(instance)
-
-	def dispatch(self, type_):
-		"""Get the actual function implementation for the given node type."""
-		typename = as_node_type(type_).name
-		method = self.registry.get(typename, self.default)
-		if self.instance is not None:
-			return method.__get__(self.instance, type(self.instance))
-		return method
-
-	def register(self, typenames):
-		"""Decorator to register an implementation for the given node type."""
-		if isinstance(typenames, str):
-			typenames = [typenames]
-		if not all(isinstance(tn, str) for tn in typenames):
-			raise TypeError('Type names must be strings')
-
-		def decorator(method):
-			for tn in typenames:
-				self.registry[tn] = method
-			return method
-
-		return decorator
-
-	def __call__(self, node, *args, **kwargs):
-		method = self.dispatch(node.type.name)
-		return method(node, *args, **kwargs)
+	def format_key(self, key):
+		return as_node_type(key).name
 
 
 def dispatch_node_type(parent=None):
