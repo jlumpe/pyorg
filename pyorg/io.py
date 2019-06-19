@@ -1,6 +1,6 @@
 """Read (and write) org mode data from JSON and other formats."""
 
-from .ast import OrgNode, NODE_CLASSES
+from .ast import OrgNode, NODE_CLASSES, parse_tags
 
 
 JSON_OBJ_DATA_TYPE_KEY = '$$data_type'
@@ -54,3 +54,9 @@ def org_node_from_json(data):
 	.OrgNode
 	"""
 	return _node_from_json(data)
+
+
+def agenda_item_from_json(data):
+	item = _mapping_from_json(data)
+	item['tags'] = parse_tags(item['tags'] or '')
+	return item

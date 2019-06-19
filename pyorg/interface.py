@@ -5,7 +5,7 @@ import json
 
 from .emacs import EmacsInterface, E
 from .ast import parse_tags, assign_outline_ids
-from .io import org_node_from_json
+from .io import org_node_from_json, agenda_item_from_json
 
 
 
@@ -195,10 +195,5 @@ class OrgInterface:
 			E.org_json_encode_agenda_buffer()
 		)
 		result = self.emacs.getresult(el, encode=False)
-		items = json.loads(result)
-
-		for item in items:
-			item['node'] = org_node_from_json(item['node'])
-			item['tags'] = parse_tags(item['tags'] or '')
-
-		return items
+		data = json.loads(result)
+		return list(map(agenda_item_from_json, data))
