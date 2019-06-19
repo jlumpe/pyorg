@@ -7,7 +7,6 @@ import json
 from ast import literal_eval
 from tempfile import TemporaryDirectory
 
-
 from .elisp import ElispAstNode, E, Raw
 
 
@@ -45,7 +44,7 @@ def get_forms_list(src):
 	return _get_forms_seq(src)
 
 
-class EmacsInterface:
+class Emacs:
 	"""Interface to Emacs program.
 
 	Attributes

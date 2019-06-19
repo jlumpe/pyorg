@@ -3,7 +3,7 @@ from glob import iglob
 from pathlib import Path
 import json
 
-from .emacs import EmacsInterface, E
+from .emacs import Emacs, E
 from .ast import parse_tags, assign_outline_ids
 from .io import org_node_from_json, agenda_item_from_json
 
@@ -74,12 +74,12 @@ class OrgDirectory:
 				yield file.relative_to(self.path)
 
 
-class OrgInterface:
+class Org:
 	"""Interface to org mode.
 
 	Attributes
 	----------
-	emacs : pyorg.emacs.EmacsInterface
+	emacs : pyorg.emacs.Emacs
 	orgdir : .OrgDirectory
 		Directory org files are read from.
 	export_dir : pathlib.Path
@@ -90,13 +90,13 @@ class OrgInterface:
 		"""
 		Parameters
 		----------
-		emacs : pyorg.emacs.EmacsInterface
+		emacs : pyorg.emacs.Emacs
 		orgdir : pathlib.Path
 			Absolute path to org directory.
 		export_dir : pathlib.Path
 			Directory org file data is exported to.
 		"""
-		self.emacs = emacs or EmacsInterface()
+		self.emacs = emacs or Emacs()
 
 		if orgdir is None:
 			orgdir = self.emacs.getresult('org-directory')
