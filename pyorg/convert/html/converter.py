@@ -154,7 +154,7 @@ class OrgHtmlConverter:
 			if html is not None:
 				parent.children.append(html)
 
-	def _make_text(self, node, text, ct):
+	def _make_text(self, node, text, ctx):
 		"""Creates plain text from org node.
 
 		Takes care of adding whitespace after if needed.
@@ -389,7 +389,8 @@ class OrgHtmlConverter:
 			inline = True
 
 		d1, d2 = self.config['latex_inline_delims' if inline else 'latex_delims']
-		return self._make_text(d1 + latex + d2)
+		text = d1 + latex + d2
+		return self._make_text(node, text, ctx)
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
