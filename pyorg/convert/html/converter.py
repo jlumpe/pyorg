@@ -498,3 +498,23 @@ class OrgHtmlConverter:
 				html.children.append(row)
 
 		return html
+
+
+def to_html(node, dom=False, **kwargs):
+	"""Convert org node to HTML.
+
+	Parameters
+	---------
+	node : pyorg.ast.OrgNode
+		Org node to convert.
+	dom : bool
+		Return HTML element instead of string.
+	kwargs
+		Keyword arguments to :class:`.OrgHtmlConverter` constructor.
+
+	Returns
+	-------
+	str or HtmlElement
+	"""
+	converter = OrgHtmlConverter(**kwargs)
+	return converter.convert(node, dom=dom)
