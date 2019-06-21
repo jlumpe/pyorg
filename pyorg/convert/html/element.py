@@ -29,7 +29,7 @@ class HtmlElement:
 	children : list
 		List of child elements (``HtmlElement`` or strings).
 	attrs : dict
-		Mapping from attributes names to values (both strings).
+		Mapping from attributes names (strings) to values (strings or bools).
 	inline : bool
 		Whether to render children in an inline context. If False each child
 		will be rendered on its own line. If True whitespace will only be added
@@ -86,7 +86,13 @@ def _write_html_recursive(stream, elem, indent, depth, inline=False):
 	stream.write('<' + elem.tag)
 
 	for key, value in elem.attrs.items():
-		stream.write(' %s="%s"' % (escape(key), escape(value)))
+		if isinstance(value, str):
+			stream.write(' %s="%s"' % (escape(key), escape(value)))
+		elif isinstance(value, bool):
+			if value:
+				stream.write(' %s' % escape(key))
+		else:
+			raise TypeError(type(value))
 
 	stream.write('>')
 
