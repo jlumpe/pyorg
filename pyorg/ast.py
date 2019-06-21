@@ -339,6 +339,50 @@ class OrgTimestampNode(OrgNode):
 		)
 
 
+@node_cls('table')
+class OrgTableNode(OrgNode):
+	"""An org node with type "table".
+
+	Attributes
+	----------
+	rows : list of OrgNode
+		List of standard rows.
+	"""
+
+	def blocks(self):
+		"""Standard rows divided into "blocks", which were separated by rule rows.
+
+		Returns
+		-------
+		list of list of OrgNode
+		"""
+		current_block = []
+		blocks = [current_block]
+
+		for row in self.contents:
+			assert row.type.name == 'table-row'
+
+			if row['type'] == 'rule':
+				# New block
+				current_block = []
+				blocks.append(current_block)
+
+			elif row['type'] == 'standard':
+				current_block.append(row.contents)
+
+			else:
+				raise ValueError()
+
+		return blocks
+
+	@property
+	def rows(self):
+		return [row for row in self.contents if row['type'] == 'standard']
+
+	def cells(self):
+		return [list(row.contents) for row in self.rows]
+
+
 def get_node_type(obj, name=False):
 	"""Get type of AST node, returning None for other types."""
 	if isinstance(obj, OrgNode):
