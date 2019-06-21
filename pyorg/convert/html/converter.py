@@ -62,6 +62,9 @@ class OrgHtmlConverter(OrgConverterBase):
 		except KeyError:
 			return 'span' if type_.is_object else 'div'
 
+	def default_classes(self, type):
+		return ['org-node', 'org-' + type.name]
+
 	def convert(self, node, dom=False):
 		"""Convert org node to HTML.
 
@@ -86,7 +89,7 @@ class OrgHtmlConverter(OrgConverterBase):
 	def _convert(self, what, ctx):
 		"""Convert an org AST node OR text to HTML element."""
 		if isinstance(what, str):
-			return what
+			return TextNode(what)
 		else:
 			return self._convert_node(what, ctx)
 
@@ -128,7 +131,7 @@ class OrgHtmlConverter(OrgConverterBase):
 			kwargs.setdefault('post_ws', node.props.get('post-blank', 0) > 0)
 
 		html = self._make_elem_base(tag, **kwargs)
-		html.add_class('org-node org-%s' % node.type.name)
+		html.add_class(self.default_classes(node.type))
 
 		# Warn about no default tag
 		if no_default:
@@ -146,7 +149,7 @@ class OrgHtmlConverter(OrgConverterBase):
 				parent.children.append(html)
 
 	def _make_text(self, node, text, ctx):
-		"""Creates plain text from org node.
+		"""Create plain text from org node.
 
 		Takes care of adding whitespace after if needed.
 		"""
@@ -162,67 +165,93 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		return str(elem)
 
+	def _make_headline(self, headline, ctx):
+		"""
+		Make the HTML element for the headline itself, without section or subheadings.
+		"""
+		tag = 'h%d' % min(headline.level + 1, 6)
+		header = self._make_elem.default(headline, ctx, tag=tag, inline=True)
+
+		# TODO info
+		if headline['todo-type']:
+			todo = self._make_todo(headline, ctx)
+			header.children.append(todo)
+
+		# Text
+		header_text = self.make_headline_text(headline, ctx, dom=True)
+		header.children.append(header_text)
+
+		# Tags
+		if headline['tags']:
+			tags = self._make_headline_tags(headline, ctx)
+			header.children.append(tags)
+
+		return header
+
+	def _make_todo(self, headline, ctx):
+		"""Make the element for a headline's TODO."""
+		todo = self._make_elem_base('span', classes='org-todo')
+
+		todo.children.append(self._make_elem_base(
+			'span',
+			text=headline['todo-keyword'],
+			classes=[
+				'org-todo-kw',
+				'org-todo-' + headline['todo-type'],
+				'org-todo-kw-' + headline['todo-keyword'],
+			],
+			post_ws=True,
+		))
+
+		if headline['priority'] is not None:
+			todo.children.append(self._make_elem_base(
+				'span',
+				text=headline.priority_chr,
+				classes='org-todo-priority org-priority-' + headline.priority_chr,
+				post_ws=True,
+			))
+
+		return todo
+
+	def _make_headline_tags(self, headline, ctx):
+		"""Make the element for the headline's tags."""
+		elem = self._make_elem_base('span', classes='org-tags')
+
+		for tag in headline['tags']:
+			elem.children.append(self._make_elem_base(
+				'span',
+				text=tag,
+				classes='org-tag',
+				post_ws=True,
+			))
+		return elem
+
 	@_make_elem.register('headline')
-	def _make_headline(self, node, ctx):
+	def _make_headline_outer(self, node, ctx):
+		"""Make the outer container for a headline node.
+
+		Includes headline HTML element itself, plus section and subheaders.
+		"""
 		assert node.is_outline
 
 		html = HtmlElement('div')
 		html.classes = 'org-header-container org-header-level-%d' % node.level
 
-		h_level = tag = 'h%d' % min(node.level + 1, 6)
-		header = self._make_elem.default(node, ctx, tag=tag, inline=True)
-		html.children.append(header)
-
 		# ID
 		if node.id:
 			html.attrs['id'] = node.id
 
-		# TODO info
-		todo_type = node.props['todo-type']
+		header = self._make_headline(node, ctx)
+		html.children.append(header)
 
-		if todo_type:
-			todo_kw = node.props['todo-keyword']
-
+		# Add classes for TODO info
+		if node.has_todo:
 			html.add_class('org-has-todo')
-			html.add_class('org-todo-%s' % todo_type)
-			html.add_class('org-todo-kw-%s' % todo_kw)
+			html.add_class('org-todo-%s' % node['todo-type'])
+			html.add_class('org-todo-kw-%s' % node['todo-keyword'])
 
-			header.children.append(self._make_elem_base(
-				'span',
-				text=todo_kw,
-				classes='org-todo org-todo-%s' % todo_type,
-				post_ws=True,
-			))
-
-			priority_code = node.props['priority']
-
-			if priority_code is not None:
-				priority_char = chr(priority_code)
-				header.children.append(self._make_elem_base(
-					'span',
-					text=priority_char,
-					classes='org-todo-priority org-todo-priority-%s' % priority_char,
-					post_ws=True,
-				))
-
-		# Text
-		header_text = self.make_headline_text(node, ctx, dom=True)
-		header.children.append(header_text)
-
-		# Tags
-		tags = node.props['tags']
-		if tags:
-			tags_elem = self._make_elem_base('span', classes='org-tags')
-
-			for tag in tags:
-				tags_elem.children.append(self._make_elem_base(
-					'span',
-					text=tag,
-					classes='org-tag',
-					post_ws=True,
-				))
-
-			header.children.append(tags_elem)
+			if node.priority_chr:
+				html.add_class('org-priority-' + node.priority_chr)
 
 		return html
 
@@ -258,8 +287,19 @@ class OrgHtmlConverter(OrgConverterBase):
 		html = self._make_elem.default(node, ctx)
 
 		# Checkbox state
-		if node.props['checkbox']:
-			html.add_class('org-checkbox org-checkbox-%s' % node.props['checkbox'])
+		if node['checkbox']:
+			html.add_class('org-has-checkbox org-checkbox-%s' % node['checkbox'])
+
+			input = self._make_elem_base(
+				'input',
+				classes='org-checkbox',
+				attrs=dict(
+					type='checkbox',
+					disabled=True,
+					checked=node['checkbox'] == 'on',
+				)
+			)
+			html.children.append(input)
 
 		# If first child is a paragraph, extract its contents
 		# (<p> tag inside <li> won't display correctly).
@@ -422,26 +462,9 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('table')
 	def _convert_table(self, node, ctx):
-		# Divide rows into "blocks", separated by rule rows
-		# These will be thead and tbody elements
-
-		current_block = []
-		blocks = [current_block]
-
-		for row in node.contents:
-			assert row.type.name == 'table-row'
-
-			if row['type'] == 'rule':
-				# New block
-				current_block = []
-				blocks.append(current_block)
-
-			else:
-				current_block.append(row.contents)
-
-		# Now convert
 		table_elem = self._make_elem.default(node, ctx, tag='table')
 
+		blocks = node.blocks()
 		for i, block in enumerate(blocks):
 			# Interpret first block as header, unless its the only one
 			is_head = i == 0 and len(blocks) > 1
@@ -450,18 +473,23 @@ class OrgHtmlConverter(OrgConverterBase):
 			table_elem.children.append(block_elem)
 
 			for row in block:
-				row_elem = self._make_elem_base('tr')
+				row_elem = self._convert_table_row(row, ctx, is_head)
 				block_elem.children.append(row_elem)
 
-				for cell in row:
-					assert cell.type.name == 'table-cell'
-
-					cell_elem = self._make_elem_base('th' if is_head else 'td')
-					row_elem.children.append(cell_elem)
-
-					self._add_children(cell_elem, cell.contents, ctx)
-
 		return table_elem
+
+	def _convert_table_row(self, node, ctx, header=False):
+		row_elem = self._make_elem_base('tr')
+
+		for cell in node:
+			assert cell.type.name == 'table-cell'
+
+			cell_elem = self._make_elem_base('th' if header else 'td')
+			row_elem.children.append(cell_elem)
+
+			self._add_children(cell_elem, cell.contents, ctx)
+
+		return row_elem
 
 	@_convert_node.register('timestamp')
 	def _convert_timestamp(self, node, ctx):
