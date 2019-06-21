@@ -248,7 +248,6 @@ class OrgOutlineNode(OrgNode):
 
 	Attributes
 	----------
-
 	level : int
 		Outline level. 0 corresponds to the root node of the file.
 	title : str
@@ -258,6 +257,10 @@ class OrgOutlineNode(OrgNode):
 	section : OrgNode
 		Org node with type `"section"` that contains the outline node's direct
 		content (not part of any nested outline nodes).
+	has_todo : bool
+		Whether this outline has a TODO keyword.
+	priority_chr : str
+		Priority character if headline with priority, otherwise None.
 	"""
 
 	is_outline = True
@@ -289,6 +292,16 @@ class OrgOutlineNode(OrgNode):
 	def outline_children(self):
 		"""Iterable over child outline nodes."""
 		return (child for child in self.contents if child.is_outline)
+
+	@property
+	def has_todo(self):
+		return self.type.name == 'headline' and self['todo-type'] is not None
+
+	@property
+	def priority_chr(self):
+		if self.type.name == 'headline' and self['priority'] is not None:
+			return chr(self['priority'])
+		return None
 
 	def outline_tree(self):
 		"""Create a list of ``(child, child_tree)`` pairs."""
