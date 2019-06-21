@@ -4,9 +4,10 @@ from pathlib import Path
 
 from pyorg.ast import ORG_NODE_TYPES, get_node_type, as_node_type, dispatch_node_type
 from .element import HtmlElement, TextNode
+from pyorg.convert.base import OrgConverterBase
 
 
-class OrgHtmlConverter:
+class OrgHtmlConverter(OrgConverterBase):
 
 	# Default HTML tag for each node type. None means to skip.
 	TAGS = {
@@ -45,22 +46,14 @@ class OrgHtmlConverter:
 	DEFAULT_CONFIG = {
 		'latex_delims': ('$$', '$$'),
 		'latex_inline_delims': (r'\(', r'\)'),
-		'date_format': '%Y-%m-%d %a',
 		'resolve_link': {},
-		'image_extensions': ('.png', '.jpg', '.gif', '.tiff'),
+		**OrgConverterBase.DEFAULT_CONFIG
 	}
 
 	DEFAULT_RESOLVE_LINK = {
 		'http': True,
 		'https': True,
 	}
-
-	def __init__(self, config=None, **kw):
-		if config is None:
-			config = {}
-		if kw:
-			config = {**config, **kw}
-		self.config = ChainMap(config, self.DEFAULT_CONFIG)
 
 	def default_tag(self, type_):
 		type_ = as_node_type(type_)
@@ -83,7 +76,7 @@ class OrgHtmlConverter:
 		-------
 		str or HtmlElement
 		"""
-		elem = self._convert(node, None)
+		elem = super().convert(node)
 
 		if dom:
 			return elem
