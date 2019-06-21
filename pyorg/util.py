@@ -1,6 +1,6 @@
 """Misc. utility code."""
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 
@@ -20,17 +20,17 @@ class SingleDispatchMethod:
 		self.instance = instance
 		self.owner = type(instance) if owner is None else owner
 
-	def __call__(self, *args, **kwargs):
-		if self.instance is None:
-			instance, arg, *rest = args
-		else:
-			instance = self.instance
-			arg, *rest = args
-
+	def dispatch(self, arg):
 		impl = self.func.dispatch(arg)
-		impl_meth = impl.__get__(instance, self.owner)
+		return impl.__get__(self.instance, self.owner)
 
-		return impl_meth(arg, *rest, **kwargs)
+	def __call__(self, arg, *rest, **kwargs):
+		impl = self.dispatch(arg)
+		return impl(arg, *rest, **kwargs)
+
+	@property
+	def default(self):
+		return self.func.default.__get__(self.instance, self.owner)
 
 
 class SingleDispatchBase(ABC):
@@ -49,9 +49,10 @@ class SingleDispatchBase(ABC):
 		Stores the specialized implementation functions by key.
 	"""
 
-	def __init__(self, default, registry=None):
+	def __init__(self, default, registry=None, doc=None):
 		self.default = default
 		self.registry = {} if registry is None else registry
+		self.__doc__ = doc if doc is not None else default.__doc__
 
 	def bind(self, instance, owner=None):
 		"""Get a version of the function bound to the given instance as a method.
