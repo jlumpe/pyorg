@@ -90,14 +90,13 @@ class OrgHtmlConverter(OrgConverterBase):
 		else:
 			return self._convert_node(what, ctx)
 
-	def _convert_node_default(self, node, ctx, **kwargs):
+	@dispatch_node_type()
+	def _convert_node(self, node, ctx, **kwargs):
+		"""Recursively _convert an org AST node to HTML."""
 		html = self._make_elem(node, ctx, **kwargs)
 		if html is not None:
 			self._add_children(html, node.contents, ctx)
 		return html
-
-	_convert_node = dispatch_node_type()(_convert_node_default)
-	_convert_node.__doc__ = """Recursively _convert an org AST node to HTML."""
 
 	def _make_elem_base(self, tag, text=None, classes=None, **kwargs):
 		"""Create a new HTML element."""
@@ -108,7 +107,12 @@ class OrgHtmlConverter(OrgConverterBase):
 			html.classes = classes
 		return html
 
-	def _make_elem_default(self, node, ctx, tag=None, **kwargs):
+	@dispatch_node_type()
+	def _make_elem(self, node, ctx, tag=None, **kwargs):
+		"""
+		Make the HTML element for a given org node (but do not recurse to
+		children).
+		"""
 		no_default = False
 
 		if tag is None:
@@ -133,12 +137,6 @@ class OrgHtmlConverter(OrgConverterBase):
 			html.children.append(self._make_error_msg(msg))
 
 		return html
-
-	_make_elem = dispatch_node_type()(_make_elem_default)
-	_make_elem.__doc__ = """
-	Make the HTML element for a given org node (but do not recurse to
-	children).
-	"""
 
 	def _add_children(self, parent, org_nodes, ctx):
 		"""Recursively _convert org AST nodes and add to parent html element."""
@@ -172,7 +170,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		html.classes = 'org-header-container org-header-level-%d' % node.level
 
 		h_level = tag = 'h%d' % min(node.level + 1, 6)
-		header = self._make_elem_default(node, ctx, tag=tag, inline=True)
+		header = self._make_elem.default(node, ctx, tag=tag, inline=True)
 		html.children.append(header)
 
 		# ID
@@ -246,7 +244,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		else:
 			assert False
 
-		html = self._make_elem_default(node, ctx, tag=tag)
+		html = self._make_elem.default(node, ctx, tag=tag)
 
 		for item in node.contents:
 			assert item.type.name == 'item'
@@ -257,7 +255,7 @@ class OrgHtmlConverter(OrgConverterBase):
 	def _convert_uo_list_item(self, node, ctx):
 		"""Convert ordered/unordered list item."""
 
-		html = self._make_elem_default(node, ctx)
+		html = self._make_elem.default(node, ctx)
 
 		# Checkbox state
 		if node.props['checkbox']:
@@ -276,7 +274,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	def _convert_dlist(self, node, ctx):
 		"""Convert a description list."""
-		dlist = self._make_elem_default(node, ctx, tag='dl')
+		dlist = self._make_elem.default(node, ctx, tag='dl')
 
 		for item in node.children:
 			assert item.type.name == 'item'
@@ -285,7 +283,7 @@ class OrgHtmlConverter(OrgConverterBase):
 			self._add_children(tag, item['tag'], ctx)
 			dlist.children.append(tag)
 
-			data = self._convert_node_default(item, ctx, tag='dd')
+			data = self._convert_node.default(item, ctx, tag='dd')
 			dlist.children.append(data)
 
 		return dlist
@@ -304,7 +302,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		return self._make_text(node, node['utf-8'], ctx)
 
 	def _convert_link_default(self, node, ctx, url=None):
-		html = self._make_elem_default(node, ctx, classes='org-linktype-' + node['type'])
+		html = self._make_elem.default(node, ctx, classes='org-linktype-' + node['type'])
 
 		# Add contents (these come from description part of link)
 		if node.contents:
@@ -343,7 +341,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		return self._convert_link_default(node, ctx, url)
 
 	def _convert_image(self, node, ctx, url):
-		html = self._make_elem_default(node, ctx, classes='org-img-link', tag='img')
+		html = self._make_elem.default(node, ctx, classes='org-img-link', tag='img')
 		html.attrs['src'] = url
 		html.attrs['title'] = node['path']
 		return html
@@ -366,7 +364,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('code')
 	def _convert_code(self, node, ctx):
-		return self._make_elem_default(node, ctx, text=node['value'])
+		return self._make_elem.default(node, ctx, text=node['value'])
 
 	@_convert_node.register('latex-fragment')
 	def _convert_latex_fragment(self, node, ctx):
@@ -397,7 +395,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		if not export_code and not export_results:
 			return None
 
-		html = self._make_elem_default(node, ctx, tag='div')
+		html = self._make_elem.default(node, ctx, tag='div')
 
 		# Source code in "value" property
 		if export_code:
@@ -416,8 +414,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		"""Convert a node with "value" property that should be its text content."""
 		value = node['value']
 		assert isinstance(value, str)
-		html = self._make_elem_default(node, ctx, text=value)
-		return html
+		return self._make_elem.default(node, ctx, text=value)
 
 	@_convert_node.register('line-break')
 	def _convert_line_break(self, node, ctx):
@@ -443,7 +440,7 @@ class OrgHtmlConverter(OrgConverterBase):
 				current_block.append(row.contents)
 
 		# Now convert
-		table_elem = self._make_elem_default(node, ctx, tag='table')
+		table_elem = self._make_elem.default(node, ctx, tag='table')
 
 		for i, block in enumerate(blocks):
 			# Interpret first block as header, unless its the only one
@@ -470,7 +467,7 @@ class OrgHtmlConverter(OrgConverterBase):
 	def _convert_timestamp(self, node, ctx):
 		begin_str = node.begin.strftime(self.config['date_format'])
 
-		html = self._make_elem_default(node, ctx)
+		html = self._make_elem.default(node, ctx)
 		html.add_class('org-timestamp-%s' % node['type'])
 		html.children.append(begin_str)
 
@@ -478,7 +475,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('planning')
 	def _convert_planning(self, node, ctx):
-		html = self._make_elem_default(node, ctx, tag='table')
+		html = self._make_elem.default(node, ctx, tag='table')
 
 		for key in ['closed', 'scheduled', 'deadline']:
 			if node[key] is not None:
