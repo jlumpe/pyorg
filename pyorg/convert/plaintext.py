@@ -52,11 +52,11 @@ class OrgPlaintextConverter(OrgConverterBase):
 
 	@_convert.register(['section'])
 	def _convert_element_contents(self, node, ctx):
-		return self._convert_contents(node.contents, sep='\n\n')
+		return self._convert_contents(node.contents, ctx, sep='\n\n')
 
 	@_convert.register([nt.name for nt in ORG_NODE_TYPES.values() if nt.is_object_container])
 	def _convert_object_container(self, node, ctx):
-		return self._convert_contents(node.contents, blanks=True)
+		return self._convert_contents(node.contents, ctx, blanks=True)
 
 	@_convert.register([
 		'code', 'comment', 'comment-block', 'latex-fragment',
