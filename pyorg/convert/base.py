@@ -1,29 +1,6 @@
 from collections import ChainMap
-from pyorg.ast import ORG_NODE_TYPES, get_node_type, as_node_type, dispatch_node_type, DispatchNodeType
 
 
-
-class OrgConverterMeta(type):
-
-	def __new__(mcls, name, bases, attrs):
-
-		# Merge dictionaries
-		for attr in ['DEFAULT_CONFIG']:
-			dct = dict()
-			for base in bases[::-1]:
-				if isinstance(base, OrgConverterMeta):
-					dct.update(getattr(base, attr))
-
-			if attr in attrs:
-				dct.update(attrs[attr])
-
-			attrs[attr] = dct
-
-		return type.__new__(mcls, name, bases, attrs)
-
-
-
-# class OrgConverterBase(metaclass=OrgConverterMeta):
 class OrgConverterBase:
 	"""Abstract base class for objects which convert org mode AST to another format.
 

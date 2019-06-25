@@ -1,16 +1,10 @@
 import os
-from glob import iglob
 from pathlib import Path
 import json
 
 from .emacs import Emacs, E
-from .ast import parse_tags, assign_outline_ids
+from .ast import assign_outline_ids
 from .io import org_node_from_json, agenda_item_from_json
-
-
-
-
-
 
 
 class OrgDirectory:
@@ -82,19 +76,15 @@ class Org:
 	emacs : pyorg.emacs.Emacs
 	orgdir : .OrgDirectory
 		Directory org files are read from.
-	export_dir : pathlib.Path
-		Directory org file data is exported to.
 	"""
 
-	def __init__(self, emacs=None, orgdir=None, export_dir=None):
+	def __init__(self, emacs=None, orgdir=None):
 		"""
 		Parameters
 		----------
 		emacs : pyorg.emacs.Emacs
 		orgdir : pathlib.Path
 			Absolute path to org directory.
-		export_dir : pathlib.Path
-			Directory org file data is exported to.
 		"""
 		self.emacs = emacs or Emacs()
 
