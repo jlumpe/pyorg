@@ -11,7 +11,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	# Default HTML tag for each node type. None means to skip.
 	TAGS = {
-		'org-data': 'div',
+		'org-data': 'article',
 		'item': 'li',
 		'paragraph': 'p',
 		'bold': 'strong',
@@ -23,7 +23,8 @@ class OrgHtmlConverter(OrgConverterBase):
 		'superscript': 'sup',
 		'subscript': 'sub',
 		'underline': 'u',
-		'section': 'div',
+		'section': 'section',
+		'headline': 'article',
 		'comment': None,
 		'example-block': 'pre',
 		'quote-block': 'blockquote',
