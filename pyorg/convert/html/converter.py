@@ -166,6 +166,20 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		return str(elem)
 
+	@_make_elem.register('org-data')
+	def _make_org_data(self, node, ctx):
+		elem = self._make_elem.default(node, ctx)
+
+		title = ctx['kwargs'].get('title', True)
+		if title is True:
+			title = node.title
+
+		if title:
+			assert isinstance(title, str)
+			elem.children.append(self._make_elem_base('h1', text=title, classes='org-data-title'))
+
+		return elem
+
 	def _make_headline(self, headline, ctx):
 		"""
 		Make the HTML element for the headline itself, without section or subheadings.
