@@ -65,7 +65,7 @@ class OrgHtmlConverter(OrgConverterBase):
 	def default_classes(self, type):
 		return ['org-node', 'org-' + type.name]
 
-	def convert(self, node, dom=False):
+	def convert(self, node, dom=False, **kwargs):
 		"""Convert org node to HTML.
 
 		Parameters
@@ -79,7 +79,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		-------
 		str or HtmlElement
 		"""
-		elem = super().convert(node)
+		elem = super().convert(node, **kwargs)
 
 		if dom:
 			return elem

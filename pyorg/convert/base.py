@@ -51,13 +51,13 @@ class OrgConverterBase:
 			config = {**config, **kw}
 		self.config = ChainMap(config, self.DEFAULT_CONFIG)
 
-	def convert(self, node):
-		ctx = self._init_ctx(node)
+	def convert(self, node, **kwargs):
+		ctx = self._init_ctx(node, kwargs)
 		return self._convert(node, ctx)
 
-	def _init_ctx(self, node):
+	def _init_ctx(self, root, kwargs):
 		"""Initialize context dictionary."""
-		return {}
+		return {'root': root, 'kwargs': kwargs}
 
 	def _convert(self, node, ctx):
 		"""Recursively convert an org AST node."""
