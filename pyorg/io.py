@@ -1,6 +1,8 @@
 """Read (and write) org mode data from JSON and other formats."""
 
-from .ast import OrgNode, NODE_CLASSES, parse_tags
+from .ast import OrgNode, NODE_CLASSES
+from pyorg.parse import parse_tags
+from .agenda import OrgAgendaItem
 
 
 JSON_OBJ_DATA_TYPE_KEY = '$$data_type'

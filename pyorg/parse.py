@@ -15,6 +15,8 @@ def read_file_keywords(file):
 
 	All keys are converted to uppercase.
 
+	Keys which appear more than once will have values in a list.
+
 	Parameters
 	----------
 	file
@@ -75,3 +77,22 @@ def read_file_keywords(file):
 	usecurrent()
 
 	return {key: values[0] if len(values) == 1 else values for key, values in keywords.items()}
+
+
+def parse_tags(string):
+	"""Parse tags from string.
+
+	Parameters
+	----------
+	string : str
+		Tags separated by colons.
+
+	Returns
+	-------
+	list[str]
+		List of tags.
+	"""
+	string = string.strip(':')
+	if not string:
+		return []
+	return string.split(':')

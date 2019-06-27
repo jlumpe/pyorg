@@ -412,6 +412,32 @@ def as_node_type(t):
 	raise TypeError(type(t))
 
 
+def as_secondary_string(obj):
+	"""Convert argument to a "secondary string" (list of nodes or strings.
+
+	Parameters
+	----------
+	obj : .OrgNode or str or list
+
+	Returns
+	-------
+	list
+
+	Raises
+	------
+	TypeError : if ``obj`` is not a str or :class:`.OrgNode` or iterable of these.
+	"""
+	if isinstance(obj, (str, OrgNode)):
+		return [obj]
+
+	ss = list(obj)
+	for item in ss:
+		if not isinstance(item, (str, OrgNode)):
+			raise TypeError('Items must be OrgNode or str, got %r' % type(item))
+
+	return ss
+
+
 def assign_outline_ids(root, depth=3):
 	"""Assign unique IDs to outline nodes."""
 	assigned = {}
@@ -433,25 +459,6 @@ def _assign_outline_ids(node, assigned, depth):
 	if depth > 1:
 		for child in node.outline_children:
 			_assign_outline_ids(child, assigned, depth - 1)
-
-
-def parse_tags(string):
-	"""Parse tags from string.
-
-	Parameters
-	----------
-	string : str
-		Tags separated by colons.
-
-	Returns
-	-------
-	list[str]
-		List of tags.
-	"""
-	string = string.strip(':')
-	if not string:
-		return []
-	return string.split(':')
 
 
 class DispatchNodeType(SingleDispatchBase):
