@@ -2,9 +2,8 @@
 
 import sys
 import os
-from subprocess import run, PIPE
+from subprocess import run, PIPE, CalledProcessError
 import json
-from ast import literal_eval
 from tempfile import TemporaryDirectory
 
 from .elisp import ElispAstNode, E, Raw
@@ -42,6 +41,21 @@ def get_forms_list(src):
 		return [Raw(src)]
 
 	return _get_forms_seq(src)
+
+
+class EmacsException(Exception):
+	"""An exception that occurred when trying to evaluate Elisp code in an emacs process.
+	"""
+	def __init__(self, src, stdout=None, stderr=None):
+		self.src = src
+		self.stdout = stdout
+		self.stderr = stderr
+
+	@classmethod
+	def from_calledprocess(cls, src, cpe):
+		exc = cls(src, stdout=cpe.stdout, stderr=cpe.stderr)
+		exc.__cause__ = cpe
+		return exc
 
 
 class Emacs:
@@ -161,7 +175,11 @@ class Emacs:
 			``process``.
 		"""
 		source = str(get_form(source))
-		result = self.run(['-eval', source], **kwargs)
+
+		try:
+			result = self.run(['-eval', source], **kwargs)
+		except CalledProcessError as exc:
+			raise EmacsException.from_calledprocess(source, exc)
 
 		if process:
 			return result
