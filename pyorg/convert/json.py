@@ -24,12 +24,19 @@ class OrgJsonConverter(OrgConverterBase):
 	@dispatch_node_type()
 	def _convert_node(self, node, ctx):
 		properties = self._convert_properties(node, ctx)
-		children = self._convert_children(node, ctx)
+		contents = self._convert_contents(node, ctx)
 		return self.make_object('node', {
 			'type': node.type.name,
 			'properties': self.make_object('mapping', properties),
-			'children': children,
+			'contents': contents,
 		})
+
+	@_convert_node.register(['org-data', 'headline'])
+	def _convert_outline_node(self, node, ctx):
+		obj = self._convert_node.default(node, ctx)
+		obj['title_plain'] = self._convert(node.title, ctx)
+		obj['title'] = self._convert(node.title, ctx)
+		return obj
 
 	@dispatch_node_type()
 	def _convert_properties(self, node, ctx):
@@ -39,18 +46,18 @@ class OrgJsonConverter(OrgConverterBase):
 		}
 
 	@dispatch_node_type()
-	def _convert_children(self, node, ctx):
+	def _convert_contents(self, node, ctx):
 		converted = []
-		for child in node.children:
-			c = self._convert_child(node, child, ctx)
+		for item in node.contents:
+			c = self._convert_contents_item(node, item, ctx)
 			if c is not None:
 				converted.append(c)
 
 		return converted
 
 	@dispatch_node_type()
-	def _convert_child(self, node, child, ctx):
-		return self._convert_node(child, ctx)
+	def _convert_contents_item(self, node, item, ctx):
+		return self._convert(item, ctx)
 
 	def _convert(self, value, ctx):
 		if isinstance(value, OrgNode):

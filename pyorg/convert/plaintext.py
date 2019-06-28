@@ -34,7 +34,7 @@ class OrgPlaintextConverter(OrgConverterBase):
 					pre = ' ' * item.props.get('pre-blank', 0)
 					post = ' ' * item.props.get('post-blank', 0)
 					txt = pre + txt + post
-				return txt
+				contents_str.append(txt)
 
 			elif isinstance(item, str):
 				contents_str.append(item)
