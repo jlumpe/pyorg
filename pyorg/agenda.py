@@ -32,6 +32,7 @@ class OrgAgendaItem:
 		from.
 	tags : list
 		List of tags.
+	category : str
 	extra : dict
 		Extra data.
 	"""
@@ -44,6 +45,7 @@ class OrgAgendaItem:
 		'deadline',
 		'view_priority',
 		'tags',
+		'category',
 	]
 	__attr_defaults__ = {
 		'tags': [],

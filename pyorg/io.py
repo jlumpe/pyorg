@@ -85,6 +85,7 @@ def agenda_item_from_json(data):
 		'deadline': 'deadline',
 		'view_priority': 'priority',
 		'priority': 'priority-letter',
+		'category': 'category',
 	}
 	for attr, key in attrmap.items():
 		try:

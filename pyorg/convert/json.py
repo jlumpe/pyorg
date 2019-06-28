@@ -10,6 +10,8 @@ from ..agenda import OrgAgendaItem
 class OrgJsonConverter(OrgConverterBase):
 	DEFAULT_CONFIG = {
 		'object_type_key': '$$data_type',
+		'include_agenda_headline': True,
+		'include_agenda_extra': True,
 		**OrgConverterBase.DEFAULT_CONFIG
 	}
 
@@ -84,16 +86,19 @@ class OrgJsonConverter(OrgConverterBase):
 	def _convert_agenda_item(self, item, ctx):
 		noconvert = {
 			'text_plain', 'type', 'keyword', 'headline_path', 'file', 'priority',
-		    'view_priority', 'tags',
+		    'view_priority', 'tags', 'category',
 		}
 
 		obj = {
 			'text': self._convert(item.text, ctx),
-			'headline': self._convert_node(item.headline, ctx),
 			'deadline': self._convert_agenda_deadline(item.deadline, ctx),
-			'extra': self._convert_mapping(item.extra, ctx),
 		}
 		obj.update({a: getattr(item, a) for a in noconvert})
+
+		if self.config['include_agenda_headline']:
+			obj['headline'] = self._convert_node(item.headline, ctx)
+		if self.config['include_agenda_extra']:
+			obj['extra'] = self._convert_mapping(item.extra, ctx)
 
 		return self.make_object('agenda-item', obj)
 
