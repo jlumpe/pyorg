@@ -13,7 +13,10 @@ def _node_from_json(data, **kw):
 
 	# Parse child nodes first
 	props = _mapping_from_json(data['properties'], **kw)
-	contents = [_from_json(c, **kw) for c in data['contents']]
+	if kw.get('recurse_contents', True):
+		contents = [_from_json(c, **kw) for c in data['contents']]
+	else:
+		contents = []
 	keywords = _mapping_from_json(data.get('keywords', {}), **kw)
 
 	cls = NODE_CLASSES.get(type_, OrgNode)
@@ -69,9 +72,11 @@ def agenda_item_from_json(data):
 	-------
 	.OrgAgendaItem
 	"""
+	node_json = data.pop('node')
+	headline = _node_from_json(node_json, recurse_contents=False)
 	item = _mapping_from_json(data)
 
-	attrs = {}
+	attrs = {'headline': headline}
 	attrmap = {
 		'type': 'type',
 		'keyword': 'todo',
@@ -88,11 +93,10 @@ def agenda_item_from_json(data):
 			pass
 
 	# Get rich and plain text from headline node if possible
-	node = attrs['headline'] = item.pop('node')
 	txt = item.pop('txt')
-	if node is not None:
-		text = node['title']
-		attrs['text_plain'] = node.title
+	if headline is not None:
+		text = headline['title']
+		attrs['text_plain'] = headline.title
 	else:
 		text = [txt]
 		attrs['text_plain'] = txt
