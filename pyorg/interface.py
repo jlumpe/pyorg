@@ -67,6 +67,33 @@ class OrgDirectory:
 			if hidden or not file.name.startswith('.'):
 				yield file.relative_to(self.path)
 
+	def _get_org_file(self, path):
+		"""Convert path to absolute, ensuring it is an org file within the directory.
+
+		Parameters
+		----------
+		path : str or pathlib.Path
+
+		Returns
+		-------
+		pathlib.Path
+
+		Raises
+		------
+		ValueError
+			If path is not within org directory or does not have .org extension.
+		OSError
+			If path is not a file.
+		"""
+		path = self.get_abs_path(path)
+
+		if not path.is_file():
+			raise OSError('%s is not a file' % path)
+		if path.suffix != '.org':
+			raise ValueError('Must be an org file')
+
+		return path
+
 
 class Org:
 	"""Interface to org mode.
@@ -123,11 +150,7 @@ class Org:
 		------
 		FileNotFoundError
 		"""
-		path = self.orgdir.get_abs_path(path)
-
-		if not path.is_file():
-			raise FileNotFoundError(str(path))
-
+		path = self.orgdir._get_org_file(path)
 		data = self._read_file_direct(path)
 
 		return data if raw else org_node_from_json(data)
@@ -157,15 +180,21 @@ class Org:
 
 		return node
 
-	def edit_file(self, path):
-		"""Open a file in the org directory for editing in Emacs.
+	def open_org_file(self, path, focus=False):
+		"""Open an org file in the org directory for editing in Emacs.
 
 		Parameters
 		----------
 		path : str or pathlib.Path
 			File path relative to org directory.
+		focus : bool
+			Switch window/input focus to opened buffer.
 		"""
-		raise NotImplementedError()
+		path = self.orgdir._get_org_file(path)
+		el = E.find_file(str(path))
+		if focus:
+			el = [el, E.x_focus_frame(None)]
+		self.emacs.eval(el)
 
 	def agenda(self, key='t', raw=False):
 		"""TODO Read agenda information.
