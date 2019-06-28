@@ -1,8 +1,9 @@
 """Convert org mode AST nodes to JSON."""
 
+from collections.abc import Sequence, Mapping
+
 from .base import OrgConverterBase
 from ..ast import dispatch_node_type, OrgNode
-from ..util import SingleDispatch
 
 
 class OrgJsonConverter(OrgConverterBase):
@@ -20,7 +21,7 @@ class OrgJsonConverter(OrgConverterBase):
 		return data
 
 	@dispatch_node_type()
-	def _convert(self, node, ctx):
+	def _convert_node(self, node, ctx):
 		properties = self._convert_properties(node, ctx)
 		children = self._convert_children(node, ctx)
 		return self.make_object('node', {
@@ -32,7 +33,7 @@ class OrgJsonConverter(OrgConverterBase):
 	@dispatch_node_type()
 	def _convert_properties(self, node, ctx):
 		return {
-			key: self._convert_generic(value, ctx)
+			key: self._convert(value, ctx)
 			for key, value in node.props.items()
 		}
 
@@ -48,22 +49,25 @@ class OrgJsonConverter(OrgConverterBase):
 
 	@dispatch_node_type()
 	def _convert_child(self, node, child, ctx):
-		return self._convert(child, ctx)
+		return self._convert_node(child, ctx)
 
-	@SingleDispatch
-	def _convert_generic(self, value, ctx):
+	def _convert(self, value, ctx):
+		if isinstance(value, OrgNode):
+			return self._convert_node(value, ctx)
+		if isinstance(value, (str, int, float, bool, type(None))):
+			return value
+		if isinstance(value, Sequence):
+			return [self._convert(item, ctx) for item in value]
+		if isinstance(value, Mapping):
+			return self._convert_mapping(value, ctx)
+
 		raise TypeError("Can't convert object of type %r" % type(value))
 
-	_convert_generic.register([str, int, float, bool, type(None)], lambda s, v, c: v)
-	_convert_generic.register(OrgNode, _convert)
-	_convert_generic.register(list, lambda s, v, c: [s._convert_generic(item, c) for item in v])
-
-	@_convert_generic.register(dict)
-	def _convert_dict(self, value, ctx):
+	def _convert_mapping(self, value, ctx):
 		converted = {}
 		for k, v in value.items():
 			assert isinstance(k, str)
-			converted[k] = self._convert_generic(v, ctx)
+			converted[k] = self._convert(v, ctx)
 
 		return self.make_object('mapping', converted)
 
