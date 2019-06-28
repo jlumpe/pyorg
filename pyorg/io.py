@@ -59,6 +59,52 @@ def org_node_from_json(data):
 
 
 def agenda_item_from_json(data):
+	"""Parse an agenda item from JSON data.
+
+	Parameters
+	----------
+	data : dict
+
+	Returns
+	-------
+	.OrgAgendaItem
+	"""
 	item = _mapping_from_json(data)
-	item['tags'] = parse_tags(item['tags'] or '')
-	return item
+
+	attrs = {}
+	attrmap = {
+		'type': 'type',
+		'keyword': 'todo',
+		'headline_path': 'path',
+		'file': 'file-relative',
+		'deadline': 'deadline',
+		'view_priority': 'priority',
+		'priority': 'priority-letter',
+	}
+	for attr, key in attrmap.items():
+		try:
+			attrs[attr] = item.pop(key)
+		except KeyError:
+			pass
+
+	# Get rich and plain text from headline node if possible
+	node = attrs['headline'] = item.pop('node')
+	txt = item.pop('txt')
+	if node is not None:
+		text = node['title']
+		attrs['text_plain'] = node.title
+	else:
+		text = [txt]
+		attrs['text_plain'] = txt
+
+	# attrs['tags'] = parse_tags(item.pop('tags', None) or '')
+	attrs['tags'] = item.pop('tags')
+
+	ignore = {
+		'file', 'done-face', 'help-echo', 'mouse-face', 'org-not-done-regexp',
+		'org-complex-heading-regexp', 'org-todo-regexp',
+	}
+	for key in ignore:
+		item.pop(key)
+
+	return OrgAgendaItem(text, **attrs, **item)

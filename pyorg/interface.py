@@ -167,7 +167,7 @@ class Org:
 		"""
 		raise NotImplementedError()
 
-	def agenda(self, key='t'):
+	def agenda(self, key='t', raw=False):
 		"""TODO Read agenda information.
 
 		Parameters
@@ -186,4 +186,6 @@ class Org:
 		)
 		result = self.emacs.getresult(el, encode=False)
 		data = json.loads(result)
+		if raw:
+			return data
 		return list(map(agenda_item_from_json, data))
