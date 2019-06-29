@@ -9,7 +9,7 @@ JSON_OBJ_DATA_TYPE_KEY = '$$data_type'
 
 
 def _node_from_json(data, **kw):
-	type_ = data['org_node_type']
+	type_ = data['type']
 
 	# Parse child nodes first
 	props = _mapping_from_json(data['properties'], **kw)
@@ -32,7 +32,7 @@ def _from_json(data, **kw):
 	if isinstance(data, dict):
 		data = dict(data)
 		datatype = data.pop(JSON_OBJ_DATA_TYPE_KEY, 'mapping')
-		if datatype == 'org':
+		if datatype == 'org-node':
 			return _node_from_json(data, **kw)
 		if datatype == 'mapping':
 			return _mapping_from_json(data, **kw)
