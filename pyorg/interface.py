@@ -114,11 +114,16 @@ class Org:
 			Absolute path to org directory.
 		"""
 		self.emacs = emacs or Emacs()
+		self._setup_emacs()
 
 		if orgdir is None:
 			orgdir = self.emacs.getresult('org-directory')
 
 		self.orgdir = OrgDirectory(orgdir)
+
+	def _setup_emacs(self):
+		"""Perform initial setup with Emacs."""
+		self.emacs.eval(E.require(E.Q('org-json')))
 
 	def _read_file_direct(self, file):
 		"""Read in JSON data for org file directly from Emacs."""
