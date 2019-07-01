@@ -1,0 +1,23 @@
+#+title: Example file
+
+
+* Header 1
+Section 1
+
+** Header 2
+Section 2
+
+*** Header 3
+Section 3
+
+**** Header 4
+Section 4
+
+
+* Markup
+A paragraph with *bold*, /italic/, _underline_, +strike+, =verbatim=, and ~code~
+objects.
+
+
+* TODO [#A] A headline with a TODO and tags                       :tag1:tag2:
+DEADLINE: <2019-06-29 Sat>

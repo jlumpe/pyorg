@@ -6,14 +6,29 @@
 Welcome to pyorg's documentation!
 =================================
 
+pyorg is a Python library for working with [Org mode](https://orgmode.org/) files
+and interacting with Org mode through Emacs itself.
+
+
+This project, and especially the documentation, are a work in progress.
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   install
+   quickstart
+   ast
+   reading-data
+   interface
+   converting
+   agenda
+   API <modules/modules>
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
