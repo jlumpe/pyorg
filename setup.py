@@ -1,6 +1,6 @@
 """Setuptools installation script for pyorg package."""
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import re
 
 
@@ -40,6 +40,7 @@ setup(
 	install_requires=requirements,
 	setup_requires=setup_requirements,
 	tests_require=test_requirements,
+	packages=find_packages(),
 	include_package_data=True,
 	# license='',
 	# classifiers='',
