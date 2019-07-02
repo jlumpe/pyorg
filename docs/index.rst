@@ -6,7 +6,7 @@
 Welcome to pyorg's documentation!
 =================================
 
-pyorg is a Python library for working with [Org mode](https://orgmode.org/) files
+pyorg is a Python library for working with `Org mode <https://orgmode.org/>`_ files
 and interacting with Org mode through Emacs itself.
 
 
