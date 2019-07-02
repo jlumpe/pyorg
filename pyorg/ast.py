@@ -218,7 +218,7 @@ class OrgNode:
 		else:
 			raise TypeError('Expected str or int, got %r' % type(key))
 
-	def dump(self, index=None, indent='  ', _level=0):
+	def dump(self, index=None, properties=False, indent='  ', _level=0):
 		"""Print a debug representation of the node and its descendants."""
 		print(indent * _level, end='')
 
@@ -228,13 +228,14 @@ class OrgNode:
 		else:
 			print(index, self.type.name)
 
-		for key in sorted(self.props):
-			value = self.props[key]
-			print('%s:%-15s = %r' % (indent * (_level + 1), key, value))
+		if properties:
+			for key in sorted(self.props):
+				value = self.props[key]
+				print('%s:%-15s = %r' % (indent * (_level + 1), key, value))
 
 		for i, child in enumerate(self.contents):
 			if isinstance(child, OrgNode):
-				child.dump(i, indent=indent, _level=_level + 1)
+				child.dump(i, properties, indent, _level + 1)
 			else:
 				print('%s%d %r' % (indent * (_level + 1), i, child))
 
@@ -273,7 +274,6 @@ class OrgOutlineNode(OrgNode):
 			self.section = self.contents[0]
 		else:
 			self.section = None
-
 
 		# Default title
 		if title is None:
