@@ -11,7 +11,7 @@ Create the following example file in Emacs:
    :literal:
 
 
-Use the ``org-json-export-buffer`` command to export it as ``example.json``.
+Use the ``org-json-export-to-json`` command to export it as ``example.json``.
 Now, read the JSON file with pyorg:
 
 .. code-block:: python
@@ -22,23 +22,24 @@ Now, read the JSON file with pyorg:
    with open('example.json') as f:
       data = json.load(f)
 
-   doc = org_node_from_json(data)
+   doc = org_doc_from_json(data)
 
 
 Explore the AST structure
 -------------------------
 
-``doc`` is an :class:`~pyorg.ast.OrgNode` which is the root node of the AST:
+``doc`` is an :class:`~pyorg.ast.OrgDocument` which contains all data read from
+the file. Its ``root`` attribute the root node of the AST:
 
->>> doc
-OrgOutlineNode(type='org-data')
+>>> doc.root
+OrgDataNode(type='org-data')
 
 
 Its has the type ``org-data``, which is always the root node of the buffer.
 Its contents are a ``section`` node and some more ``headline`` nodes:
 
 
->>> doc.contents
+>>> doc.root.contents
 [OrgNode(type='section'),
  OrgOutlineNode(type='headline'),
  OrgOutlineNode(type='headline'),
@@ -49,8 +50,8 @@ We can print a simple representation of the outline tree with the
 :meth:`~pyorg.ast.OrgOutlineNode.dump_outline` method:
 
 
->>> doc.dump_outline()
-Example file
+>>> doc.root.dump_outline()
+Root
   0. Header 1
     0. Header 2
       0. Header 3
@@ -63,7 +64,7 @@ Get the 2nd headline (3rd item in root node's contents) and print the full
 AST subtree, along with each node's properties:
 
 
->>> hl2 = doc[2]
+>>> hl2 = doc.root[2]
 >>> hl2.dump(properties=True)
 headline
   :archivedp       = False
@@ -115,7 +116,7 @@ headline
 Check third headline's properties to get the TODO information and tags:
 
 
->>> hl3 = doc[3]
+>>> hl3 = doc.root[3]
 >>> hl3.props
 {'title': ['A headline with a TODO and tags'],
  'deadline': OrgTimestampNode(type='timestamp'),

@@ -4,7 +4,7 @@ Installation
 Emacs dependencies
 ------------------
 
-pyorg requires the `org-json <https://github.com/jlumpe/org-json>`_ package be
+pyorg requires the `ox-json <https://github.com/jlumpe/ox-json>`_ package be
 installed in Emacs in order to be able to extract syntax trees from files.
 
 
