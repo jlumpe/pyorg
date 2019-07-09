@@ -240,10 +240,8 @@ class OrgNode:
 				print('%s%d %r' % (indent * (_level + 1), i, child))
 
 
-@node_cls('org-data')
-@node_cls('headline')
 class OrgOutlineNode(OrgNode):
-	"""Org node that is a component of the outline tree.
+	"""Abstract base class for org node that is a component of the outline tree.
 
 	Corresponds to the root org-data node or a headline node.
 
@@ -251,23 +249,22 @@ class OrgOutlineNode(OrgNode):
 	----------
 	level : int
 		Outline level. 0 corresponds to the root node of the file.
-	title : str
-		Title of outline node as plain text.
-	id : str
-		Unique ID for TOC tree.
 	section : OrgNode
 		Org node with type `"section"` that contains the outline node's direct
 		content (not part of any nested outline nodes).
-	has_todo : bool
-		Whether this outline has a TODO keyword.
-	priority_chr : str
-		Priority character if headline with priority, otherwise None.
 	"""
 
 	is_outline = True
 
-	def __init__(self, type_, *args, title=None, id=None, **kw):
+	def __new__(cls, *args, **kwargs):
+		if cls is OrgOutlineNode:
+			raise TypeError("Can't instantiate abstract base class directly")
+		return object.__new__(cls)
+
+	def __init__(self, type_, *args, level=0, **kw):
 		super().__init__(type_, *args, **kw)
+
+		self.level = level
 
 		# Section and child outline nodes from content
 		if self.contents and self.contents[0].type.name == 'section':
@@ -275,33 +272,10 @@ class OrgOutlineNode(OrgNode):
 		else:
 			self.section = None
 
-		# Default title
-		if title is None:
-			if self.type.name == 'headline':
-				from pyorg.convert.plaintext import to_plaintext
-				title = to_plaintext(self['title'], blanks=True)
-			else:
-				title = self.section.keywords.get('TITLE')
-
-		self.title = title
-		self.id = id
-
-		self.level = self['level'] if self.type.name == 'headline' else 0
-
 	@property
 	def outline_children(self):
 		"""Iterable over child outline nodes."""
 		return (child for child in self.contents if child.is_outline)
-
-	@property
-	def has_todo(self):
-		return self.type.name == 'headline' and self['todo-type'] is not None
-
-	@property
-	def priority_chr(self):
-		if self.type.name == 'headline' and self['priority'] is not None:
-			return chr(self['priority'])
-		return None
 
 	def outline_tree(self):
 		"""Create a list of ``(child, child_tree)`` pairs."""
@@ -315,9 +289,71 @@ class OrgOutlineNode(OrgNode):
 		print('  ' * indent, end='')
 		if n is not None:
 			print('%d. ' % n, end='')
-		print(self.title)
+		print(self._dump_name())
 		for (i, child) in enumerate(self.outline_children):
 			child._dump_outline(indent + 1, i)
+
+	def _dump_name(self):
+		"""Get the name to show for this node when dumping outline."""
+		raise NotImplementedError()
+
+
+@node_cls('headline')
+class OrgHeadlineNode(OrgOutlineNode):
+	"""Org header element.
+
+	Attributes
+	----------
+	title : str
+		Title of headline as plain text.
+	id : str
+		Unique ID for TOC tree.
+	has_todo : bool
+		Whether this outline has a TODO keyword.
+	priority_chr : str
+		Priority character if headline with priority, otherwise None.
+	"""
+
+	def __init__(self, type_, *args, title=None, id=None, **kw):
+		super().__init__(type_, *args, **kw)
+		assert self.type.name == 'headline'
+
+		# Default title
+		if title is None:
+			from pyorg.convert.plaintext import to_plaintext
+			title = to_plaintext(self['title'], blanks=True)
+
+		self.title = title
+		self.id = id
+		self.level = self['level']
+
+	@property
+	def has_todo(self):
+		return self.type.name == 'headline' and self['todo-type'] is not None
+
+	@property
+	def priority_chr(self):
+		if self.type.name == 'headline' and self['priority'] is not None:
+			return chr(self['priority'])
+		return None
+
+	def _dump_name(self):
+		return self.title
+
+
+@node_cls('org-data')
+class OrgDataNode(OrgOutlineNode):
+	"""Root node for an org mode parse tree.
+
+	Doesn't do anything special, aside from being the outline node at level 0.
+	"""
+
+	def __init__(self, type_, *args, **kw):
+		super().__init__(type_, *args, **kw)
+		assert self.type.name == 'org-data'
+
+	def _dump_name(self):
+		return 'Root'
 
 
 @node_cls('timestamp')
