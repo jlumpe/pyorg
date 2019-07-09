@@ -433,7 +433,7 @@ class OrgTableNode(OrgNode):
 
 
 def get_node_type(obj, name=False):
-	"""Get type of AST node, returning None for other types."""
+	"""Get type of AST node, returning None for other Python types."""
 	if isinstance(obj, OrgNode):
 		return obj.type.name if name else obj.type
 	return None
@@ -449,7 +449,7 @@ def as_node_type(t):
 
 
 def as_secondary_string(obj):
-	"""Convert argument to a "secondary string" (list of nodes or strings.
+	"""Convert argument to a "secondary string" (list of nodes or strings).
 
 	Parameters
 	----------
