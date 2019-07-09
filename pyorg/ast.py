@@ -474,27 +474,48 @@ def as_secondary_string(obj):
 	return ss
 
 
-def assign_outline_ids(root, depth=3):
-	"""Assign unique IDs to outline nodes."""
-	assigned = {}
-	for child in root.outline_children:
-		_assign_outline_ids(child, assigned, depth - 1)
-	return assigned
+class OrgDocument:
+	"""Represents an entire Org mode document.
 
+	Attributes
+	----------
+	root : OrgOutlineNode
+		The root of the document's Abstract Syntax Tree.
+	keywords : dict
+		The keywords attached to the document, such as the author or date.
+		Value may be strings or secondary strings.
+	"""
 
-def _assign_outline_ids(node, assigned, depth):
-	id = base = re.sub(r'[^\w_-]+', '-', node.title).strip('-')
-	i = 1
-	while id in assigned:
-		i += 1
-		id = '%s-%d' % (base, i)
+	def __init__(self, root, keywords=None):
+		self.root = root
+		self.keywords = dict(keywords or [])
 
-	node.id = id
-	assigned[id] = node
+	def assign_header_ids(self, depth=3):
+		"""Assign unique IDs to headers."""
+		assigned = {}
+		for child in self.root.outline_children:
+			self._assign_header_ids(child, assigned, depth)
+		return assigned
 
-	if depth > 1:
-		for child in node.outline_children:
-			_assign_outline_ids(child, assigned, depth - 1)
+	def _assign_header_ids(self, header, assigned, depth):
+
+		id_ = self._make_header_id(header, assigned)
+		header.id = id_
+		assigned[id_] = header
+
+		if depth > 1:
+			for child in header.outline_children:
+				self._assign_header_ids(child, assigned, depth - 1)
+
+	def _make_header_id(self, header, assigned=None):
+		if assigned is None:
+			assigned = []
+		id = base = re.sub(r'[^\w_-]+', '-', header.title).strip('-')
+		i = 1
+		while id in assigned:
+			i += 1
+			id = '%s-%d' % (base, i)
+		return id
 
 
 class DispatchNodeType(SingleDispatchBase):

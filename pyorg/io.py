@@ -1,7 +1,6 @@
 """Read (and write) org mode data from JSON and other formats."""
 
-from .ast import OrgNode, NODE_CLASSES
-from pyorg.parse import parse_tags
+from .ast import OrgDocument, OrgNode, OrgDataNode, NODE_CLASSES
 from .agenda import OrgAgendaItem
 
 
@@ -49,6 +48,25 @@ def _from_json(data, **kw):
 
 def _mapping_from_json(data, **kw):
 	return {k: _from_json(v, **kw) for k, v in data.items() if k != JSON_OBJ_DATA_TYPE_KEY}
+
+
+
+def org_doc_from_json(data):
+	"""Parse an ORG document from exported JSON data.
+
+	Returns
+	-------
+	OrgDocument
+	"""
+	data = dict(data)
+	data_type = data.pop(JSON_OBJ_DATA_TYPE_KEY, None)
+	if data_type is not None and data_type != 'org-document':
+		raise ValueError('Expected data type "org-document", got %r' % data_type)
+
+	contents = list(map(_from_json, data.pop('contents')))
+	root = OrgDataNode('org-data', contents=contents)
+
+	return OrgDocument(root, keywords=data)
 
 
 def org_node_from_json(data):

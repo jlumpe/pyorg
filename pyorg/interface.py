@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
 import json
+from tempfile import TemporaryDirectory
 
 from .emacs import Emacs, E
-from .ast import assign_outline_ids
-from .io import org_node_from_json, agenda_item_from_json
+from .io import org_doc_from_json, agenda_item_from_json
 
 
 class OrgDirectory:
@@ -123,16 +123,23 @@ class Org:
 
 	def _setup_emacs(self):
 		"""Perform initial setup with Emacs."""
-		self.emacs.eval(E.require(E.Q('org-json')))
+		self.emacs.eval(E.require(E.Q('ox-json')))
+
+	def _export_file(self, file, dest):
+		el = E.with_current_buffer(
+			E.find_file_noselect(str(file)),
+			E.org_export_to_file(E.Q('json'), str(dest))
+		)
+		self.emacs.eval(el)
 
 	def _read_file_direct(self, file):
 		"""Read in JSON data for org file directly from Emacs."""
-		el = E.with_current_buffer(
-			E.find_file_noselect(str(file)),
-			E.org_json_encode_node(E.org_element_parse_buffer())
-		)
-		result = self.emacs.getresult(el, encode=False)
-		return json.loads(result)
+		file = Path(file)
+		with TemporaryDirectory() as tmpdir:
+			tmpfile = os.path.join(tmpdir, file.stem + '.json')
+			self._export_file(file, tmpfile)
+			with open(tmpfile) as f:
+				return json.load(f)
 
 	def read_org_file_direct(self, path, raw=False):
 		"""Read and parse an org file directly from Emacs.
@@ -149,7 +156,7 @@ class Org:
 
 		Returns
 		-------
-		pyorg.ast.OrgNode or dict
+		pyorg.ast.OrgDocument or dict
 
 		Raises
 		------
@@ -158,30 +165,25 @@ class Org:
 		path = self.orgdir._get_org_file(path)
 		data = self._read_file_direct(path)
 
-		return data if raw else org_node_from_json(data)
+		return data if raw else org_doc_from_json(data)
 
-	def read_org_file(self, path, assign_ids=True):
+	def read_org_file(self, path):
 		"""Read and parse an org file.
 
 		Parameters
 		----------
 		path : str or pathlib.Path
 			File path relative to org directory.
-		assign_ids : bool
-			Assign IDs to outline nodes. See :func:`pyorg.ast.assign_outline_ids`.
 
 		Returns
 		-------
-		pyorg.ast.OrgNode
+		pyorg.ast.OrgDocument
 
 		Raises
 		------
 		FileNotFoundError
 		"""
 		node = self.read_org_file_direct(path)
-
-		if assign_ids:
-			assign_outline_ids(node)
 
 		return node
 
