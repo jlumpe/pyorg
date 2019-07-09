@@ -26,7 +26,7 @@ class ElispSingleton:
 
 	def __getattr__(self, name):
 		"""Attribute access with lower-case name gets a symbol."""
-		if name[0] == name[0].lower():
+		if name[0] == name[0].lower() and not name.startswith('__'):
 			return Symbol(self._convert_symbol_name(name))
 
 		return object.__getattribute__(self, name)

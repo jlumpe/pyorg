@@ -51,9 +51,12 @@ class Symbol(Form):
 	def isconst(self):
 		return self.name.startswith(':') or self.name in ('nil', 't')
 
-	def __call__(self, *args):
+	def __call__(self, *args, **kwargs):
 		"""Produce a function call node from this symbol."""
-		return List((self, *map(to_elisp, args)))
+		items = [self, *map(to_elisp, args)]
+		for key, value in kwargs.items():
+			items.extend([Symbol(':' + key), to_elisp(value)])
+		return List(items)
 
 
 class Cons(Form):
