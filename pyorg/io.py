@@ -7,17 +7,18 @@ from .agenda import OrgAgendaItem
 JSON_OBJ_DATA_TYPE_KEY = '$$data_type'
 
 
-def _node_from_json(data, **kw):
+def _node_from_json(data, ctx, recurse_contents=True):
 	type_ = data['type']
 	ref = data['ref']
 
 	# Parse child nodes first
-	props = _mapping_from_json(data['properties'], **kw)
-	if kw.get('recurse_contents', True):
-		contents = [_from_json(c, **kw) for c in data['contents']]
+	props = _mapping_from_json(data['properties'], ctx)
+	if recurse_contents:
+		contents = _list_from_json(data['contents'], ctx)
 	else:
 		contents = []
-	keywords = _mapping_from_json(data.get('keywords', {}), **kw)
+
+	keywords = _mapping_from_json(data.get('keywords', {}), ctx)
 
 	cls = NODE_CLASSES.get(type_, OrgNode)
 	node = cls(type_, props=props, contents=contents, keywords=keywords, ref=ref)
@@ -25,21 +26,27 @@ def _node_from_json(data, **kw):
 	return node
 
 
-def _from_json(data, **kw):
+def _from_json(data, ctx):
 	if isinstance(data, list):
-		return [_from_json(item, **kw) for item in  data]
+		return _list_from_json(data, ctx)
 
 	if isinstance(data, dict):
 		data = dict(data)
 		datatype = data.pop(JSON_OBJ_DATA_TYPE_KEY, 'mapping')
+
 		if datatype == 'org-node':
-			return _node_from_json(data, **kw)
+			return _node_from_json(data, ctx)
+
 		if datatype == 'mapping':
-			return _mapping_from_json(data, **kw)
+			return _mapping_from_json(data, ctx)
+
 		if datatype == 'error':
+			ctx.errors.append((ctx._path, data['message']))
 			print('Parse error:', data['message'])
 			return None
-		raise ValueError(data)
+
+		ctx.errors.append((ctx._path, 'Unknown data type in JSON export : %r' % datatype))
+		return None
 
 	if isinstance(data, (type(None), bool, int, float, str)):
 		return data
@@ -47,10 +54,18 @@ def _from_json(data, **kw):
 	raise TypeError(type(data))
 
 
-def _mapping_from_json(data, **kw):
-	return {k: _from_json(v, **kw) for k, v in data.items() if k != JSON_OBJ_DATA_TYPE_KEY}
+def _list_from_json(data, ctx):
+	return [
+		_from_json(c, ctx._push(i))
+		for (i, c) in enumerate(data)
+	]
 
 
+def _mapping_from_json(data, ctx):
+	return {
+		k: _from_json(v, ctx._push(k))
+		for k, v in data.items() if k != JSON_OBJ_DATA_TYPE_KEY
+	}
 
 def org_doc_from_json(data):
 	"""Parse an ORG document from exported JSON data.
@@ -64,9 +79,12 @@ def org_doc_from_json(data):
 	if data_type is not None and data_type != 'org-document':
 		raise ValueError('Expected data type "org-document", got %r' % data_type)
 
-	contents = list(map(_from_json, data.pop('contents')))
+	ctx = TreeNamespace(data=data, errors=[])
+
+	contents = _list_from_json(data.pop('contents'), ctx)
 	root = OrgDataNode('org-data', contents=contents)
 
+	data['export_errors'] = ctx.errors
 	return OrgDocument(root, keywords=data)
 
 
@@ -77,7 +95,7 @@ def org_node_from_json(data):
 	-------
 	.OrgNode
 	"""
-	return _node_from_json(data)
+	return _node_from_json(data, TreeNamespace())
 
 
 def agenda_item_from_json(data):

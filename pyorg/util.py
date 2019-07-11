@@ -1,7 +1,7 @@
 """Misc. utility code."""
 
 from abc import ABC
-
+from collections import ChainMap
 
 
 class SingleDispatchMethod:
@@ -159,3 +159,124 @@ class SingleDispatch(SingleDispatchBase):
 
 	def iter_keys(self, arg):
 		return type(arg).mro()
+
+
+class Namespace:
+	"""A simple collection of attribute values, that supports inheritance.
+
+	Meant to be used to pass large sets of arguments down through recursive
+	function calls in a way that they can be overridden easily.
+
+	Public attributes and methods start with an underscore so as not to
+	interfere with the namespace.
+
+	Attributes
+	----------
+	_map : collections.ChainMap
+		Stores the underlying data.
+	"""
+	__slots__ = ('_map')
+
+	def __init__(self, _map=None, **kwargs):
+		if _map is None:
+			_map = dict()
+		if not isinstance(_map, ChainMap):
+			_map = ChainMap(_map)
+
+		_map.update(kwargs)
+		self._map = _map
+
+	def _flatten(self):
+		"""Flatten into non-hierarchical format.
+
+		Returns
+		-------
+		dict
+		"""
+		return dict(self._map)
+
+	@property
+	def _root(self):
+		return Namespace(ChainMap(self._map.maps[-1]))
+
+	def _push_map(self, _map, **kwargs):
+		if _map is None:
+			_map = dict()
+		_map.update(kwargs)
+		return self._map.new_child(_map)
+
+	def _push(self, _map=None, **kwargs):
+		"""Create a new namespace object that inherits from this one.
+
+		Returns
+		-------
+		.Namespace
+		"""
+		return Namespace(self._push_map())
+
+	def _pop(self):
+		"""Get the namespace this one inherits from.
+
+		Returns
+		-------
+		.Namespace
+		"""
+		return Namespace(self._map.parents)
+
+	def _update(self, *args, **kwargs):
+		self._map.update(*args, **kwargs)
+
+	def __getattr__(self, name):
+		if not name.startswith('_'):
+			try:
+				return self._map[name]
+			except KeyError:
+				pass
+
+		raise AttributeError(name)
+
+	def __setattr__(self, name, value):
+		if not name.startswith('_'):
+			self._map[name] = value
+		else:
+			object.__setattr__(self, name, value)
+
+	def __getitem__(self, key):
+		return self._map[key]
+
+	def __setitem__(self, key, value):
+		self._map[key] = value
+
+	def __delitem__(self, key):
+		del self._map[key]
+
+	def __repr__(self):
+		return '<%s %r>' % (type(self).__name__, self._flatten())
+
+
+class TreeNamespace(Namespace):
+	"""Namespace with a ``_path`` attribute that marks its location in a tree structure.
+
+	Attributes
+	----------
+	_path : tuple
+	"""
+	__slots__ = ('_path')
+
+	def __init__(self, _map=None, _path=(), **kwargs):
+		super().__init__(_map, **kwargs)
+		if len(_path) != len(self._map.maps) - 1:
+			raise ValueError('Length of path does not match ChainMap depth')
+		self._path = tuple(_path)
+
+	def _push(self, _part, _map=None, **kwargs):
+		childpath = self._path + (_part,)
+		childmap = self._push_map(_map, **kwargs)
+		return TreeNamespace(childmap, childpath)
+
+	def _pop(self):
+		return TreeNamespace(self._map.parents, self._path[:-1])
+
+	@property
+	def _root(self):
+		return TreeNamespace(ChainMap(self._map.maps), ())
