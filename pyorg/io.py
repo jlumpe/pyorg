@@ -1,7 +1,8 @@
 """Read (and write) org mode data from JSON and other formats."""
 
-from .ast import OrgDocument, OrgNode, OrgDataNode, NODE_CLASSES
+from .ast import OrgDocument, OrgNode, OrgDataNode, NODE_CLASSES, OrgTimestamp
 from .agenda import OrgAgendaItem
+from .util import TreeNamespace, parse_iso_date
 
 
 JSON_OBJ_DATA_TYPE_KEY = '$$data_type'
@@ -45,6 +46,9 @@ def _from_json(data, ctx):
 			print('Parse error:', data['message'])
 			return None
 
+		if datatype == 'timestamp':
+			return _timestamp_from_json(data, ctx)
+
 		ctx.errors.append((ctx._path, 'Unknown data type in JSON export : %r' % datatype))
 		return None
 
@@ -66,6 +70,15 @@ def _mapping_from_json(data, ctx):
 		k: _from_json(v, ctx._push(k))
 		for k, v in data.items() if k != JSON_OBJ_DATA_TYPE_KEY
 	}
+
+
+def _timestamp_from_json(data, ctx):
+	return OrgTimestamp(
+		data['type'],
+		start=None if data.get('start') is None else parse_iso_date(data['start']),
+		end=None if data.get('end') is None else parse_iso_date(data['end']),
+	)
+
 
 def org_doc_from_json(data):
 	"""Parse an ORG document from exported JSON data.

@@ -2,6 +2,8 @@
 
 from abc import ABC
 from collections import ChainMap
+import re
+from datetime import date, datetime, timedelta, timezone
 
 
 class SingleDispatchMethod:
@@ -159,6 +161,61 @@ class SingleDispatch(SingleDispatchBase):
 
 	def iter_keys(self, arg):
 		return type(arg).mro()
+
+
+def parse_iso_date(string):
+	"""Parse date or datetime from an ISO 8601 date string.
+
+	Parameters
+	----------
+	string
+
+	Returns
+	-------
+	datetime.date or datetime.datetime
+		Return time varies based on whether the string includes a time component.
+	"""
+	try:
+		# Split into date[, time, timezone]
+		match = re.fullmatch(r'([\d-]+)(?:T([\d:.]+)(.*))?', string)
+		assert match, 'Bad format'
+		datepart, timepart, tzpart = match.groups()
+
+		# Parse date
+		datematch = re.fullmatch(r'(\d\d\d\d)(?:-(\d\d)(?:-(\d\d))?)?', datepart)
+		assert datematch, 'Bad date'
+		year, month, day = [int(g or 1) for g in datematch.groups()]
+
+		# Date only
+		if not timepart:
+			return date(year, month, day)
+
+		# Parse time
+		timematch = re.fullmatch(r'(\d\d)(?::(\d\d)(?::(\d\d)(?:\.(\d+))?)?)?', timepart)
+		assert timematch, 'Bad time'
+		hour, minute, second = [int(g or 0) for g in timematch.groups()[:3]]
+
+		msecond = int(timematch.group(4)[:6].ljust(6, '0')) if timematch.group(4) else 0
+
+		# Parse time zone
+		if not tzpart:
+			tz = None
+
+		elif tzpart == 'Z':
+			tz = timezone.utc
+
+		else:
+			tzmatch = re.fullmatch(r'[+-](\d\d):(\d\d)', tzpart)
+			assert tzmatch, 'Bad time zone'
+			tzhours, tzminutes = map(int, tzmatch.groups())
+			td = timedelta(hours=tzhours, minutes=tzminutes)
+			tz = timezone(td) if tzpart.startswith('+') else timezone(-td)
+
+		return datetime(year, month, day, hour, minute, second, msecond, tzinfo=tz)
+
+
+	except (ValueError, AssertionError):
+		raise ValueError('Invalid ISO8601 time: ' + string) from None
 
 
 class Namespace:

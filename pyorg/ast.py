@@ -7,11 +7,11 @@ syntax.
 
 import re
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import NamedTuple
-from collections import ChainMap
+from collections import ChainMap, namedtuple
 
-from .util import SingleDispatchBase
+from .util import SingleDispatchBase, parse_iso_date
 
 
 _OrgNodeTypeBase = NamedTuple('OrgNodeType', [
@@ -129,6 +129,55 @@ def node_cls(type_):
 		NODE_CLASSES[type_] = cls
 		return cls
 	return decorator
+
+
+class OrgTimestampInterval:
+	"""An interval of time stored in an Org mode time stamp's repeater or warning.
+
+	Attributes
+	----------
+	type : str
+	unit : str
+	value : float
+	"""
+	def __init__(self, type_, unit, value):
+		self.type = type_
+		self.unit = unit
+		self.value = value
+
+
+class OrgTimestamp:
+	"""Stores Org mode timestamp data, without the whole AST node.
+
+	Attributes
+	----------
+	tstype : str
+	start : datetime.datetime
+	end : datetime.datetime
+	repeater : .OrgTimestampInterval
+	warning : .OrgTimestampInterval
+	"""
+
+	def __init__(self, tstype, start, end=None, repeater=None, warning=None):
+		self.tstype = tstype
+		self.start = start
+		self.end = start if end is None else end
+		self.repeater = repeater
+		self.warning = warning
+
+	@property
+	def is_interval(self):
+		return self.start and self.end and (self.start != self.end)
+
+	@property
+	def interval(self):
+		return self.end - self.start if self.start and self.end else None
+
+	def __repr__(self):
+		if self.is_interval:
+			return '<%s %s %s to %s>' % (type(self).__name__, self.tstype, self.start, self.end)
+		else:
+			return '<%s %s %s>' % (type(self).__name__, self.tstype, self.start or self.end)
 
 
 class OrgNode:
@@ -360,34 +409,18 @@ class OrgDataNode(OrgOutlineNode):
 
 
 @node_cls('timestamp')
-class OrgTimestampNode(OrgNode):
-	"""An org node with type "timestamp".
-
-	Attributes
-	----------
-	begin : datetime
-		Begin date, parsed from properties
-	end : datetime
-		End date, parsed from properties
-	"""
+class OrgTimestampNode(OrgNode, OrgTimestamp):
+	"""An org node with type "timestamp"."""
 
 	def __init__(self, type_, *args, **kwargs):
-		super().__init__(type_, *args, **kwargs)
+		OrgNode.__init__(self, type_, *args, **kwargs)
 		assert self.type.name == 'timestamp'
 
-		self.begin = datetime(
-			self['year-start'],
-			self['month-start'],
-			self['day-start'],
-			self['hour-start'] or 0,
-			self['minute-start'] or 0,
-		)
-		self.end = datetime(
-			self['year-end'],
-			self['month-end'],
-			self['day-end'],
-			self['hour-end'] or 0,
-			self['minute-end'] or 0,
+		OrgTimestamp.__init__(
+			self,
+			self['type'],
+			start=parse_iso_date(self['start']) if self.props.get('start') else None,
+			end=parse_iso_date(self['end']) if self.props.get('end') else None,
 		)
 
 
