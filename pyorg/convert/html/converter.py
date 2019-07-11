@@ -37,6 +37,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		'horizontal-rule': 'hr',
 		'radio-target': 'span',  # TODO
 		'property-drawer': None,
+		'keyword': None
 	}
 
 	INLINE_NODES = frozenset(
@@ -440,8 +441,8 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
-		params = node.props.get('parameters', {})
-		print('params = %r' % params)
+		# params = node.props.get('parameters', {})
+		params = {}
 
 		export = params.get('export', 'both')
 		export_code = export in ('code', 'both')
@@ -508,11 +509,27 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('timestamp')
 	def _convert_timestamp(self, node, ctx):
-		begin_str = node.begin.strftime(self.config['date_format'])
 
 		html = self._make_elem.default(node, ctx)
-		html.add_class('org-timestamp-%s' % node['type'])
-		html.children.append(begin_str)
+
+		html.add_class('org-tstype-%s' % node['type'])
+		if node.tstype in ('active', 'active-range'):
+			html.add_class('org-timestamp-active')
+		elif node.tstype in ('inactive', 'inactive-range'):
+			html.add_class('org-timestamp-inactive')
+		else:
+			html.add_class('org-timestamp-' + node.tstype)
+
+		fmt = self.config['date_format']
+
+		if node.is_range:
+			html.add_class('org-timestamp-range')
+			start = node.start.strftime(fmt)
+			end = node.end.strftime(fmt)
+			html.children.append('%s to %s' % (start, end))
+
+		else:
+			html.children.append((node.start or node.end).strftime(fmt))
 
 		return html
 
