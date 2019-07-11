@@ -148,6 +148,8 @@ class OrgNode:
 	contents : list
 		List of contents (org nodes or strings), obtained from
 		`org-element-contents`.
+	ref : str
+		A unique ID assigned to the node during the export process.
 	keywords : dict
 		Dictionary of keyword values.
 	parent : OrgNode
@@ -160,7 +162,7 @@ class OrgNode:
 
 	is_outline = False
 
-	def __init__(self, type_, props=None, contents=None, keywords=None, parent=None, outline=None):
+	def __init__(self, type_, props=None, contents=None, keywords=None, ref=None, parent=None, outline=None):
 		if isinstance(type_, str):
 			type_ = ORG_NODE_TYPES[type_]
 		if not isinstance(type_, OrgNodeType):
@@ -169,6 +171,7 @@ class OrgNode:
 
 		self.props = dict(props or {})
 		self.keywords = dict(keywords or {})
+		self.ref = ref
 		self.contents = list(contents or [])
 		self.parent = parent
 		self.outline = outline
@@ -324,7 +327,7 @@ class OrgHeadlineNode(OrgOutlineNode):
 			title = to_plaintext(self['title'], blanks=True)
 
 		self.title = title
-		self.id = id
+		self.id = self.ref if id is None else id
 		self.level = self['level']
 
 	@property

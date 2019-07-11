@@ -9,6 +9,7 @@ JSON_OBJ_DATA_TYPE_KEY = '$$data_type'
 
 def _node_from_json(data, **kw):
 	type_ = data['type']
+	ref = data['ref']
 
 	# Parse child nodes first
 	props = _mapping_from_json(data['properties'], **kw)
@@ -19,7 +20,7 @@ def _node_from_json(data, **kw):
 	keywords = _mapping_from_json(data.get('keywords', {}), **kw)
 
 	cls = NODE_CLASSES.get(type_, OrgNode)
-	node = cls(type_, props=props, contents=contents, keywords=keywords)
+	node = cls(type_, props=props, contents=contents, keywords=keywords, ref=ref)
 
 	return node
 
