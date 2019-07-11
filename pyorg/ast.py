@@ -304,6 +304,8 @@ class OrgOutlineNode(OrgNode):
 	section : OrgNode
 		Org node with type `"section"` that contains the outline node's direct
 		content (not part of any nested outline nodes).
+	subheadings : list
+		List of nested headings.
 	"""
 
 	is_outline = True
@@ -319,10 +321,14 @@ class OrgOutlineNode(OrgNode):
 		self.level = level
 
 		# Section and child outline nodes from content
+		self.subheadings = list(self.contents)
+
 		if self.contents and self.contents[0].type.name == 'section':
-			self.section = self.contents[0]
+			self.section = self.subheadings.pop(0)
 		else:
 			self.section = None
+
+		assert all(sh.type.name == 'headline' for sh in self.subheadings)
 
 	@property
 	def outline_children(self):
