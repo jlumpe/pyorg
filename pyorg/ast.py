@@ -166,7 +166,7 @@ class OrgTimestamp:
 		self.warning = warning
 
 	@property
-	def is_interval(self):
+	def is_range(self):
 		return self.start and self.end and (self.start != self.end)
 
 	@property
@@ -174,7 +174,7 @@ class OrgTimestamp:
 		return self.end - self.start if self.start and self.end else None
 
 	def __repr__(self):
-		if self.is_interval:
+		if self.is_range:
 			return '<%s %s %s to %s>' % (type(self).__name__, self.tstype, self.start, self.end)
 		else:
 			return '<%s %s %s>' % (type(self).__name__, self.tstype, self.start or self.end)
