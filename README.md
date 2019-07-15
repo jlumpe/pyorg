@@ -174,3 +174,7 @@ independent if and only if the Gram determinant (the determinant of the Gram mat
 	</div>
 </div>
 ```
+
+## Related projects
+
+Check out [pyorg-flask](http://github.com/jlumpe/pyorg-flask) for a simple web app based on this package that lets you browse your org directory and view HTML exports of your org files.
