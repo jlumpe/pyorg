@@ -330,14 +330,9 @@ class OrgOutlineNode(OrgNode):
 
 		assert all(sh.type.name == 'headline' for sh in self.subheadings)
 
-	@property
-	def outline_children(self):
-		"""Iterable over child outline nodes."""
-		return (child for child in self.contents if child.is_outline)
-
 	def outline_tree(self):
 		"""Create a list of ``(child, child_tree)`` pairs."""
-		return [(child, child.outline_tree()) for child in self.outline_children]
+		return [(child, child.outline_tree()) for child in self.subheadings]
 
 	def dump_outline(self):
 		"""Print representation of node's outline subtree."""
@@ -348,7 +343,7 @@ class OrgOutlineNode(OrgNode):
 		if n is not None:
 			print('%d. ' % n, end='')
 		print(self._dump_name())
-		for (i, child) in enumerate(self.outline_children):
+		for (i, child) in enumerate(self.subheadings):
 			child._dump_outline(indent + 1, i)
 
 	def _dump_name(self):
@@ -535,7 +530,7 @@ class OrgDocument:
 	def assign_header_ids(self, depth=3):
 		"""Assign unique IDs to headers."""
 		assigned = {}
-		for child in self.root.outline_children:
+		for child in self.root.subheadings:
 			self._assign_header_ids(child, assigned, depth)
 		return assigned
 
@@ -546,7 +541,7 @@ class OrgDocument:
 		assigned[id_] = header
 
 		if depth > 1:
-			for child in header.outline_children:
+			for child in header.subheadings:
 				self._assign_header_ids(child, assigned, depth - 1)
 
 	def _make_header_id(self, header, assigned=None):
