@@ -4,4 +4,4 @@
 Python library for working with Emacs org mode.
 
 
-Check out the [Quickstart](https://pyorg.readthedocs.io/en/latest/quickstart.html) section in the documentation.
+Check out the [Quick start](https://pyorg.readthedocs.io/en/latest/quick-start.html) section in the documentation.

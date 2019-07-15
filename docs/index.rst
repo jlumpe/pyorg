@@ -18,7 +18,7 @@ This project, and especially the documentation, are a work in progress.
    :caption: Contents:
 
    install
-   quickstart
+   quick-start
    ast
    reading-data
    interface

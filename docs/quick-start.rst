@@ -1,5 +1,5 @@
-Quickstart
-==========
+Quick start
+===========
 
 
 Getting the data from Emacs to Python
@@ -17,7 +17,7 @@ Now, read the JSON file with pyorg:
 .. code-block:: python
 
    import json
-   from pyorg.io import org_node_from_json
+   from pyorg.io import org_doc_from_json
 
    with open('example.json') as f:
       data = json.load(f)
