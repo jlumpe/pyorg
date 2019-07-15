@@ -334,17 +334,28 @@ class OrgOutlineNode(OrgNode):
 		"""Create a list of ``(child, child_tree)`` pairs."""
 		return [(child, child.outline_tree()) for child in self.subheadings]
 
-	def dump_outline(self):
-		"""Print representation of node's outline subtree."""
-		self._dump_outline()
+	def dump_outline(self, depth=None, indent='  '):
+		"""Print representation of node's outline subtree.
 
-	def _dump_outline(self, indent=0, n=None):
-		print('  ' * indent, end='')
+		Parameters
+		----------
+		depth : int
+			Maximum depth to print.
+		indent : str
+			String to indent with.
+		"""
+		self._dump_outline(None, 0, depth, indent)
+
+	def _dump_outline(self, n, depth, maxdepth, indent):
+		print(indent * depth, end='')
 		if n is not None:
 			print('%d. ' % n, end='')
 		print(self._dump_name())
-		for (i, child) in enumerate(self.subheadings):
-			child._dump_outline(indent + 1, i)
+
+		if depth is None or depth < maxdepth:
+			nextdepth = None if depth is None else depth + 1
+			for (i, child) in enumerate(self.subheadings):
+				child._dump_outline(i, nextdepth, maxdepth, indent)
 
 	def _dump_name(self):
 		"""Get the name to show for this node when dumping outline."""
