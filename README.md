@@ -61,7 +61,7 @@ Read in an org file:
 View file's outline structure:
 
 ```python3
-doc.root.dump_outline()
+>>> doc.root.dump_outline()
 Root
   0. Linear algebra
     0. Distance between covariance matrices
@@ -103,7 +103,6 @@ headline
   :commentedp      = False
   :footnote-section-p = False
   :level           = 2
-  :post-affiliated = 2
   :priority        = None
   :raw-value       = '[[wikipedia:Gramian_Matrix][Gramian Matrix]]'
   :tags            = []
