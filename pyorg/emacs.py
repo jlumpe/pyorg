@@ -80,7 +80,7 @@ class Emacs:
 		1 to echo stderr of Emacs command, 2 to echo stdout. 0 turns off.
 	"""
 
-	def __init__(self, cmd=('emacs', '--batch'), client=False, verbose=1):
+	def __init__(self, cmd, client=False, verbose=1):
 		if isinstance(cmd, str):
 			self.cmd = [cmd]
 		else:
@@ -88,6 +88,28 @@ class Emacs:
 
 		self.is_client = client
 		self.verbose = verbose
+
+	@classmethod
+	def batch(cls, cmd_extra=(), **kwargs):
+		"""Create instance with default settings to run in batch mode.
+
+		Returns
+		-------
+		.Emacs
+		"""
+		cmd = ['emacs', '--batch', *cmd_extra]
+		return cls(cmd, client=False, **kwargs)
+
+	@classmethod
+	def client(cls, cmd_extra=(), **kwargs):
+		"""Create instance with default settings to run in client mode.
+
+		Returns
+		-------
+		.Emacs
+		"""
+		cmd = ['emacsclient', *cmd_extra]
+		return cls(cmd, client=True, **kwargs)
 
 	def run(self, args, check=True, verbose=None):
 		"""Run the Emacs command with a list of arguments.
@@ -188,6 +210,7 @@ class Emacs:
 
 	def _result_from_stdout(self, form, **kwargs):
 		"""Get result by reading from stdout."""
+		raise NotImplementedError()
 
 	def _result_from_tmpfile(self, form, **kwargs):
 		"""Get result by having Emacs write to tmp file and reading from Python."""
