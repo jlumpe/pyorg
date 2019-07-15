@@ -242,6 +242,30 @@ class OrgHtmlConverter(OrgConverterBase):
 			))
 		return elem
 
+	def _make_headline_planning(self, headline, ctx):
+		"""Convert planning data for headline."""
+
+		rows = []
+
+		for key in ['closed', 'scheduled', 'deadline']:
+			if headline.props.get(key) is not None:
+				row = self._make_elem_base('tr')
+				row.children.append(self._make_elem_base('th', text=key.title()))
+
+				td = self._make_elem_base('td')
+				td.children.append(self._convert(headline[key], ctx._push(key)))
+				row.children.append(td)
+
+				rows.append(row)
+
+		if rows:
+			html = self._make_elem_base(tag='table', classes='org-planning')
+			html.children.extend(rows)
+
+			return html
+
+		return None
+
 	@_make_elem.register('headline')
 	def _make_headline_outer(self, node, ctx):
 		"""Make the outer container for a headline node.
@@ -257,8 +281,14 @@ class OrgHtmlConverter(OrgConverterBase):
 		if node.id:
 			html.attrs['id'] = node.id
 
+		# Header element
 		header = self._make_headline(node, ctx)
 		html.children.append(header)
+
+		# Planning
+		planning = self._make_headline_planning(node, ctx)
+		if planning:
+			html.children.append(planning)
 
 		# Add classes for TODO info
 		if node.has_todo:
@@ -443,8 +473,8 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
-		# params = node.props.get('parameters', {})
-		params = {}
+		# params = node.props.get('parameters', {'export': 'both'})
+		params = {'export': 'both'}
 
 		export = params.get('export', 'both')
 		export_code = export in ('code', 'both')
@@ -532,23 +562,6 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		else:
 			html.children.append((node.start or node.end).strftime(fmt))
-
-		return html
-
-	@_convert_node.register('planning')
-	def _convert_planning(self, node, ctx):
-		html = self._make_elem.default(node, ctx, tag='table')
-
-		for key in ['closed', 'scheduled', 'deadline']:
-			if node[key] is not None:
-				row = self._make_elem_base('tr')
-				row.children.append(self._make_elem_base('th', text=key.title()))
-
-				td = self._make_elem_base('td')
-				td.children.append(self._convert(node[key], ctx))
-				row.children.append(td)
-
-				html.children.append(row)
 
 		return html
 
