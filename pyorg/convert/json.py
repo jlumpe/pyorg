@@ -43,15 +43,15 @@ class OrgJsonConverter(OrgConverterBase):
 	@dispatch_node_type()
 	def _convert_properties(self, node, ctx):
 		return {
-			key: self._convert(value, ctx)
+			key: self._convert(value, ctx._push(key))
 			for key, value in node.props.items()
 		}
 
 	@dispatch_node_type()
 	def _convert_contents(self, node, ctx):
 		converted = []
-		for item in node.contents:
-			c = self._convert_contents_item(node, item, ctx)
+		for i, item in enumerate(node.contents):
+			c = self._convert_contents_item(node, item, ctx._push(i))
 			if c is not None:
 				converted.append(c)
 
@@ -67,7 +67,7 @@ class OrgJsonConverter(OrgConverterBase):
 		if isinstance(value, (str, int, float, bool, type(None))):
 			return value
 		if isinstance(value, Sequence):
-			return [self._convert(item, ctx) for item in value]
+			return [self._convert(item, ctx._push(i)) for i, item in enumerate(value)]
 		if isinstance(value, Mapping):
 			return self._convert_mapping(value, ctx)
 		if isinstance(value, OrgAgendaItem):
@@ -79,7 +79,7 @@ class OrgJsonConverter(OrgConverterBase):
 		converted = {}
 		for k, v in value.items():
 			assert isinstance(k, str)
-			converted[k] = self._convert(v, ctx)
+			converted[k] = self._convert(v, ctx._push(k))
 
 		return self.make_object('mapping', converted)
 

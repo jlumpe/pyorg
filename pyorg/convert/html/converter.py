@@ -145,8 +145,8 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	def _add_children(self, parent, org_nodes, ctx):
 		"""Recursively _convert org AST nodes and add to parent html element."""
-		for node in org_nodes:
-			html = self._convert(node, ctx)
+		for i, node in enumerate(org_nodes):
+			html = self._convert(node, ctx._push(i))
 			if html is not None:
 				parent.children.append(html)
 
@@ -171,7 +171,7 @@ class OrgHtmlConverter(OrgConverterBase):
 	def _make_org_data(self, node, ctx):
 		elem = self._make_elem.default(node, ctx)
 
-		title = ctx['kwargs'].get('title', True)
+		title = ctx.kwargs.get('title', True)
 		if title is True:
 			title = node.title
 
@@ -291,9 +291,9 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		html = self._make_elem.default(node, ctx, tag=tag)
 
-		for item in node.contents:
+		for i, item in enumerate(node.contents):
 			assert item.type.name == 'item'
-			html.children.append(self._convert_uo_list_item(item, ctx))
+			html.children.append(self._convert_uo_list_item(item, ctx._push(i)))
 
 		return html
 
@@ -332,14 +332,16 @@ class OrgHtmlConverter(OrgConverterBase):
 		"""Convert a description list."""
 		dlist = self._make_elem.default(node, ctx, tag='dl')
 
-		for item in node.children:
+		for i, item in enumerate(node.children):
 			assert item.type.name == 'item'
 
+			ctxi = ctx._push(i)
+
 			tag = self._make_elem_base('dt')
-			self._add_children(tag, item['tag'], ctx)
+			self._add_children(tag, item['tag'], ctxi)
 			dlist.children.append(tag)
 
-			data = self._convert_node.default(item, ctx, tag='dd')
+			data = self._convert_node.default(item, ctxi, tag='dd')
 			dlist.children.append(data)
 
 		return dlist
@@ -497,13 +499,13 @@ class OrgHtmlConverter(OrgConverterBase):
 	def _convert_table_row(self, node, ctx, header=False):
 		row_elem = self._make_elem_base('tr')
 
-		for cell in node:
+		for i, cell in enumerate(node):
 			assert cell.type.name == 'table-cell'
 
 			cell_elem = self._make_elem_base('th' if header else 'td')
 			row_elem.children.append(cell_elem)
 
-			self._add_children(cell_elem, cell.contents, ctx)
+			self._add_children(cell_elem, cell.contents, ctx._push(i))
 
 		return row_elem
 

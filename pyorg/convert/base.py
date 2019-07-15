@@ -1,4 +1,5 @@
 from collections import ChainMap
+from pyorg.util import TreeNamespace
 
 
 class OrgConverterBase:
@@ -33,8 +34,8 @@ class OrgConverterBase:
 		return self._convert(node, ctx)
 
 	def _init_ctx(self, root, kwargs):
-		"""Initialize context dictionary."""
-		return {'root': root, 'kwargs': kwargs}
+		"""Initialize context namespace."""
+		return TreeNamespace(root=root, kwargs=kwargs)
 
 	def _convert(self, node, ctx):
 		"""Recursively convert an org AST node."""

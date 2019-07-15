@@ -5,7 +5,7 @@ from .base import OrgConverterBase
 class OrgPlaintextConverter(OrgConverterBase):
 
 	def convert_multi(self, items, blanks=False, sep=None):
-		ctx = {}
+		ctx = self._init_ctx(None, {})
 		return self._convert_contents(items, ctx, blanks=blanks, sep=sep)
 
 	def _convert_contents(self, contents, ctx, blanks=False, sep=None):
@@ -27,9 +27,9 @@ class OrgPlaintextConverter(OrgConverterBase):
 		"""
 		contents_str = []
 
-		for item in contents:
+		for i, item in enumerate(contents):
 			if isinstance(item, OrgNode):
-				txt = self._convert(item, ctx)
+				txt = self._convert(item, ctx._push(i))
 				if blanks:
 					pre = ' ' * item.props.get('pre-blank', 0)
 					post = ' ' * item.props.get('post-blank', 0)
