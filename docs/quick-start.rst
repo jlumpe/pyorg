@@ -11,7 +11,7 @@ Create the following example file in Emacs:
    :literal:
 
 
-Use the ``org-json-export-to-json`` command to export it as ``example.json``.
+Use the ``ox-json-export-to-json`` command to export it as ``example.json``.
 Now, read the JSON file with pyorg:
 
 .. code-block:: python
