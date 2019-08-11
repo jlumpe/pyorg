@@ -3,7 +3,8 @@ from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
 
-from .emacs import Emacs, E
+from emacs import Emacs
+from emacs.elisp import E
 from .io import org_doc_from_json, agenda_item_from_json
 
 

@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
    pyorg.convert
-   pyorg.elisp
 
 Submodules
 ----------
@@ -16,7 +15,6 @@ Submodules
 
    pyorg.agenda
    pyorg.ast
-   pyorg.emacs
    pyorg.interface
    pyorg.io
    pyorg.parse
