@@ -117,15 +117,15 @@ class Org:
 		Directory org files are read from.
 	"""
 
-	def __init__(self, emacs=None, orgdir=None):
+	def __init__(self, emacs, orgdir=None):
 		"""
 		Parameters
 		----------
 		emacs : pyorg.emacs.Emacs
-		orgdir : pathlib.Path
+		orgdir : str or pathlib.Path
 			Absolute path to org directory.
 		"""
-		self.emacs = emacs or Emacs()
+		self.emacs = emacs
 		self._setup_emacs()
 
 		if orgdir is None:
