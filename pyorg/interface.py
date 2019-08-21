@@ -117,13 +117,15 @@ class Org:
 		Directory org files are read from.
 	"""
 
-	def __init__(self, emacs, orgdir=None):
+	def __init__(self, emacs, orgdir=None, plugins=None):
 		"""
 		Parameters
 		----------
 		emacs : pyorg.emacs.Emacs
 		orgdir : str or pathlib.Path
 			Absolute path to org directory.
+		plugins : list of .OrgPlugin
+			Plugins to register on the interface.
 		"""
 		self.emacs = emacs
 		self._setup_emacs()
@@ -133,9 +135,43 @@ class Org:
 
 		self.orgdir = OrgDirectory(orgdir)
 
+		self.plugins = set()
+		self._plugins_by_cls = {}
+
+		for plugin in (plugins or []):
+			self.register_plugin(plugin)
+
 	def _setup_emacs(self):
 		"""Perform initial setup with Emacs."""
 		self.emacs.eval(E.require(E.Q('ox-json')))
+
+	def register_plugin(self, plugin):
+		"""Register a plugin on the interface.
+
+		TODO
+
+		Parameters
+		----------
+		plugin : .OrgPlugin
+		"""
+		assert isinstance(plugin, OrgPlugin)
+
+		if type(plugin) in self._plugins_by_cls:
+			raise TypeError('Plugin %r already registered' % type(plugin))
+
+		plugin.init(self)
+
+		self.plugins.add(plugin)
+		self._plugins_by_cls[type(plugin)] = plugin
+
+		if plugin.api_name is not None:
+			if hasattr(self, plugin.api_name):
+				raise ValueError(
+					'Attribute name conflict when registering plugin %r with API name %r'
+					% (type(plugin), plugin.api_name)
+				)
+
+			self.__dict__[plugin.api_name] = plugin
 
 	def _export_file(self, file, dest):
 		el = E.with_current_buffer(
@@ -237,3 +273,25 @@ class Org:
 		if raw:
 			return data
 		return list(map(agenda_item_from_json, data))
+
+
+class OrgPlugin:
+	"""Base class for plugins which add additional functionality to Org interface.
+	"""
+
+	api_name = None
+
+	def __init__(self):
+		self.org = None
+		self.initialized = False
+
+	def init(self, org):
+		self.org = org
+		self._init()
+		self.initialized = True
+
+	def _init(self):
+		pass
+
+	def get_api(self):
+		return None
