@@ -2,7 +2,8 @@ from collections import ChainMap
 import re
 from pathlib import Path
 
-from pyorg.ast import ORG_NODE_TYPES, get_node_type, as_node_type, dispatch_node_type
+from pyorg.ast import OrgNode, OrgTimestamp, ORG_NODE_TYPES, get_node_type, as_node_type, dispatch_node_type
+from pyorg.util import SingleDispatch
 from .element import HtmlElement, TextNode
 from pyorg.convert.base import OrgConverterBase
 
@@ -88,13 +89,16 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		return str(elem)
 
+	@SingleDispatch
 	def _convert(self, what, ctx):
 		"""Convert an org AST node OR text to HTML element."""
-		if isinstance(what, str):
-			return TextNode(what)
-		else:
-			return self._convert_node(what, ctx)
+		raise TypeError("Can't convert object of type %r" % type(what))
 
+	@_convert.register(str)
+	def _convert_string(self, string, ctx):
+		return TextNode(string)
+
+	@_convert.register(OrgNode)
 	@dispatch_node_type()
 	def _convert_node(self, node, ctx, **kwargs):
 		"""Recursively _convert an org AST node to HTML."""
@@ -159,6 +163,8 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	def make_headline_text(self, node, ctx=None, dom=False):
 		"""Make HTML element for text content of headline node."""
+		if ctx is None:
+			ctx = self._init_ctx(node, {})
 		elem = self._make_elem_base('span', classes='org-header-text')
 		self._add_children(elem, node['title'], ctx)
 
@@ -539,29 +545,29 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		return row_elem
 
+	@_convert.register(OrgTimestamp)
 	@_convert_node.register('timestamp')
-	def _convert_timestamp(self, node, ctx):
+	def _convert_timestamp(self, ts, ctx):
 
-		html = self._make_elem.default(node, ctx)
+		html = self._make_elem_base('span', classes='org-timestamp')
 
-		html.add_class('org-tstype-%s' % node['type'])
-		if node.tstype in ('active', 'active-range'):
+		if ts.tstype in ('active', 'active-range'):
 			html.add_class('org-timestamp-active')
-		elif node.tstype in ('inactive', 'inactive-range'):
+		elif ts.tstype in ('inactive', 'inactive-range'):
 			html.add_class('org-timestamp-inactive')
 		else:
-			html.add_class('org-timestamp-' + node.tstype)
+			html.add_class('org-timestamp-' + ts.tstype)
 
 		fmt = self.config['date_format']
 
-		if node.is_range:
+		if ts.is_range:
 			html.add_class('org-timestamp-range')
-			start = node.start.strftime(fmt)
-			end = node.end.strftime(fmt)
+			start = ts.start.strftime(fmt)
+			end = ts.end.strftime(fmt)
 			html.children.append('%s to %s' % (start, end))
 
 		else:
-			html.children.append((node.start or node.end).strftime(fmt))
+			html.children.append((ts.start or ts.end).strftime(fmt))
 
 		return html
 
