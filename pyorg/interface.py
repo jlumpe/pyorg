@@ -15,7 +15,15 @@ class OrgDirectory:
 		Absolute path to org directory.
 	"""
 
+	def __new__(cls, path):
+		# Return argument when called with existing instance.
+		if isinstance(path, OrgDirectory):
+			return path
+		return object.__new__(cls)
+
 	def __init__(self, path):
+		if path is self:
+			return
 		self.path = Path(path).expanduser().absolute()
 
 	def __repr__(self):
