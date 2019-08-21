@@ -442,6 +442,10 @@ class OrgTableNode(OrgNode):
 	----------
 	rows : list of OrgNode
 		List of standard rows.
+	nrows : int
+		Number of (non-rule) rows in table. This includes the header.
+	ncols: int
+		Number of columns in table.
 	"""
 
 	def blocks(self):
@@ -473,6 +477,14 @@ class OrgTableNode(OrgNode):
 	@property
 	def rows(self):
 		return [row for row in self.contents if row['type'] == 'standard']
+
+	@property
+	def nrows(self):
+		return sum(row['type'] == 'standard' for row in self.contents)
+
+	@property
+	def ncols(self):
+		return len(self.contents[0])
 
 	def cells(self):
 		return [list(row.contents) for row in self.rows]
