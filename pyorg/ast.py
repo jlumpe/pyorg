@@ -393,13 +393,11 @@ class OrgHeadlineNode(OrgOutlineNode):
 
 	@property
 	def has_todo(self):
-		return self.type.name == 'headline' and self['todo-type'] is not None
+		return self['todo-type'] is not None
 
 	@property
 	def priority_chr(self):
-		if self.type.name == 'headline' and self['priority'] is not None:
-			return chr(self['priority'])
-		return None
+		return None if self['priority'] is None else chr(self['priority'])
 
 	def _dump_name(self):
 		return self.title
