@@ -20,7 +20,8 @@ class SingleDispatchMethod:
 	def __init__(self, func, instance, owner=None):
 		self.func = func
 		self.instance = instance
-		self.owner = type(instance) if owner is None else owner
+		self.owner = owner
+		self.__doc__ = func.__doc__
 
 	def dispatch(self, arg):
 		impl = self.func.dispatch(arg)
@@ -65,7 +66,7 @@ class SingleDispatchBase(ABC):
 			Object instance to bind to.
 		owner
 		"""
-		return SingleDispatchMethod(self, instance, owner)
+		return self if instance is None else SingleDispatchMethod(self, instance, owner)
 
 	def __get__(self, instance, owner):
 		return self.bind(instance, owner)
