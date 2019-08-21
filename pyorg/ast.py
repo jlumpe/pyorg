@@ -352,7 +352,7 @@ class OrgOutlineNode(OrgNode):
 			print('%d. ' % n, end='')
 		print(self._dump_name())
 
-		if depth is None or depth < maxdepth:
+		if maxdepth is None or depth < maxdepth:
 			nextdepth = None if depth is None else depth + 1
 			for (i, child) in enumerate(self.subheadings):
 				child._dump_outline(i, nextdepth, maxdepth, indent)
