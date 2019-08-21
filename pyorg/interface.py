@@ -18,6 +18,9 @@ class OrgDirectory:
 	def __init__(self, path):
 		self.path = Path(path).expanduser().absolute()
 
+	def __repr__(self):
+		return '%s(%r)' % (type(self).__name__, str(self.path))
+
 	def get_abs_path(self, path):
 		"""Get absolute path from path relative to org directory.
 
