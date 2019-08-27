@@ -539,14 +539,14 @@ class OrgDocument:
 	----------
 	root : OrgOutlineNode
 		The root of the document's Abstract Syntax Tree.
-	keywords : dict
-		The keywords attached to the document, such as the author or date.
-		Value may be strings or secondary strings.
+	props : dict
+		Additional file-level properties attached to the document, such as the
+		author or date. Values may be strings or secondary strings.
 	"""
 
-	def __init__(self, root, keywords=None):
+	def __init__(self, root, props=None):
 		self.root = root
-		self.keywords = dict(keywords or [])
+		self.props = dict(props or [])
 
 	def assign_header_ids(self, depth=3):
 		"""Assign unique IDs to headers."""
