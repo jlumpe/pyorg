@@ -201,17 +201,13 @@ class OrgNode:
 		A unique ID assigned to the node during the export process.
 	keywords : dict
 		Dictionary of keyword values.
-	parent : OrgNode
-		Parent AST node.
-	outline : OrgOutlineNode
-		Most recent outline node in the node's ancestors (not including self).
 	is_outline : bool
 		Whether this node is an outline node.
 	"""
 
 	is_outline = False
 
-	def __init__(self, type_, props=None, contents=None, keywords=None, ref=None, parent=None, outline=None):
+	def __init__(self, type_, props=None, contents=None, keywords=None, ref=None):
 		if isinstance(type_, str):
 			type_ = ORG_NODE_TYPES[type_]
 		if not isinstance(type_, OrgNodeType):
@@ -222,8 +218,6 @@ class OrgNode:
 		self.keywords = dict(keywords or {})
 		self.ref = ref
 		self.contents = list(contents or [])
-		self.parent = parent
-		self.outline = outline
 
 	@staticmethod
 	def _iter_children_recursive(obj):
