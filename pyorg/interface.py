@@ -6,7 +6,7 @@ from collections.abc import MutableMapping
 from tempfile import TemporaryDirectory
 
 from emacs.elisp import E
-from .io import org_doc_from_json, agenda_item_from_json
+from .io import org_doc_from_json
 
 
 
