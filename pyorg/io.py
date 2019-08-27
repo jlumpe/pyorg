@@ -80,6 +80,10 @@ def _timestamp_from_json(data, ctx):
 	)
 
 
+def _init_ctx(data):
+	return TreeNamespace(data=data, errors=[])
+
+
 def org_doc_from_json(data):
 	"""Parse an ORG document from exported JSON data.
 
@@ -92,13 +96,13 @@ def org_doc_from_json(data):
 	if data_type is not None and data_type != 'org-document':
 		raise ValueError('Expected data type "org-document", got %r' % data_type)
 
-	ctx = TreeNamespace(data=data, errors=[])
-
-	contents = _list_from_json(data.pop('contents'), ctx)
+	ctx = _init_ctx(data)
+	contents = _list_from_json(data['contents'], ctx)
 	root = OrgDataNode('org-data', contents=contents)
 
-	data['export_errors'] = ctx.errors
-	return OrgDocument(root, keywords=data)
+	props = data['properties']
+	props['export_errors'] = ctx.errors
+	return OrgDocument(root, props=props)
 
 
 def org_node_from_json(data):
@@ -108,5 +112,6 @@ def org_node_from_json(data):
 	-------
 	.OrgNode
 	"""
-	return _node_from_json(data, TreeNamespace())
+	ctx = _init_ctx(data)
+	return _node_from_json(data, ctx)
 
