@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
 from collections import ChainMap, namedtuple
+from copy import copy, deepcopy
 
 from .util import SingleDispatchBase, parse_iso_date
 
@@ -218,6 +219,19 @@ class OrgNode:
 		self.keywords = dict(keywords or {})
 		self.ref = ref
 		self.contents = list(contents or [])
+
+	def __copy__(self, deep=False):
+		cp = deepcopy if deep else copy
+		return type(self)(
+			self.type,
+			props=cp(self.props),
+			contents=cp(self.contents),
+			keywords=cp(self.keywords),
+			ref=self.ref,
+		)
+
+	def __deepcopy__(self):
+		return self.__copy__(deep=True)
 
 	@staticmethod
 	def _iter_children_recursive(obj):
