@@ -323,20 +323,17 @@ class OrgOutlineNode(OrgNode):
 			raise TypeError("Can't instantiate abstract base class directly")
 		return object.__new__(cls)
 
-	def __init__(self, type_, *args, level=0, **kw):
-		super().__init__(type_, *args, **kw)
-
-		self.level = level
-
-		# Section and child outline nodes from content
-		self.subheadings = list(self.contents)
-
+	@property
+	def section(self):
 		if self.contents and self.contents[0].type.name == 'section':
-			self.section = self.subheadings.pop(0)
-		else:
-			self.section = None
+			return self.contents[0]
+		return None
 
-		assert all(sh.type.name == 'headline' for sh in self.subheadings)
+	@property
+	def subheadings(self):
+		if self.contents and self.contents[0].type.name == 'section':
+			return self.contents[1:]
+		return self.contents[:]
 
 	def outline_tree(self):
 		"""Create a list of ``(child, child_tree)`` pairs."""
