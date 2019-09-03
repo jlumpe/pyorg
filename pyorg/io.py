@@ -100,9 +100,11 @@ def org_doc_from_json(data):
 	contents = _list_from_json(data['contents'], ctx)
 	root = OrgDataNode('org-data', contents=contents)
 
-	props = data['properties']
-	props['export_errors'] = ctx.errors
-	return OrgDocument(root, props=props)
+	doc = OrgDocument(root, props=data['properties'])
+	if ctx.errors:
+		doc.meta['export_errors'] = ctx.errors
+
+	return doc
 
 
 def org_node_from_json(data):
@@ -113,5 +115,7 @@ def org_node_from_json(data):
 	.OrgNode
 	"""
 	ctx = _init_ctx(data)
-	return _node_from_json(data, ctx)
-
+	node = _node_from_json(data, ctx)
+	if ctx.errors:
+		node.meta['export_errors'] = ctx.errors
+	return node
