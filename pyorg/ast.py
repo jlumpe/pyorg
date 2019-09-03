@@ -202,13 +202,15 @@ class OrgNode:
 		A unique ID assigned to the node during the export process.
 	keywords : dict
 		Dictionary of keyword values.
+	meta : dict
+		A dictionary containing arbitrary application-specific metadata.
 	is_outline : bool
 		Whether this node is an outline node.
 	"""
 
 	is_outline = False
 
-	def __init__(self, type_, props=None, contents=None, keywords=None, ref=None):
+	def __init__(self, type_, props=None, contents=None, keywords=None, ref=None, meta=None):
 		if isinstance(type_, str):
 			type_ = ORG_NODE_TYPES[type_]
 		if not isinstance(type_, OrgNodeType):
@@ -219,6 +221,7 @@ class OrgNode:
 		self.keywords = dict(keywords or {})
 		self.ref = ref
 		self.contents = list(contents or [])
+		self.meta = dict(meta or [])
 
 	def __copy__(self, deep=False):
 		cp = deepcopy if deep else copy
@@ -547,11 +550,14 @@ class OrgDocument:
 	props : dict
 		Additional file-level properties attached to the document, such as the
 		author or date. Values may be strings or secondary strings.
+	meta : dict
+		A dictionary containing arbitrary application-specific metadata.
 	"""
 
-	def __init__(self, root, props=None):
+	def __init__(self, root, props=None, meta=None):
 		self.root = root
 		self.props = dict(props or [])
+		self.meta = dict(meta or [])
 
 	def assign_header_ids(self, depth=3):
 		"""Assign unique IDs to headers."""
