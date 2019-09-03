@@ -446,26 +446,3 @@ class Org:
 		if focus:
 			el = [el, E.x_focus_frame(None)]
 		self.emacs.eval(el)
-
-	def agenda(self, key='t', raw=False):
-		"""TODO Read agenda information.
-
-		Parameters
-		----------
-		key : str
-			TODO
-
-		Returns
-		-------
-		list[dict]
-		"""
-
-		el = E.org_json_with_agenda_buffer(
-			key,
-			E.org_json_encode_agenda_buffer()
-		)
-		result = self.emacs.getresult(el, encode=False)
-		data = json.loads(result)
-		if raw:
-			return data
-		return list(map(agenda_item_from_json, data))
