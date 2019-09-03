@@ -18,6 +18,9 @@ class TextNode:
 		self.text = text
 		self.post_ws = post_ws
 
+	def __str__(self):
+		return escape(self.text)
+
 
 class HtmlElement:
 	"""Lightweight class to represent an HTML element.
