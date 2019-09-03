@@ -329,7 +329,8 @@ class OrgFilesystemCache(OrgFileCache):
 
 	def __iter__(self):
 		for path in self.cache_dir.glob('**/*' + self.ext):
-			yield str(path.relative_to(self.cache_dir))
+			name = path.name[:-len(self.ext)] + '.org'
+			yield str(path.parent.relative_to(self.cache_dir) / name)
 
 	def __len__(self):
 		return sum(1 for file in self)
