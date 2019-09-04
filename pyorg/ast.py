@@ -132,6 +132,43 @@ def node_cls(type_):
 	return decorator
 
 
+def dump_ast(value, properties=False, indent='  ', _level=0):
+	"""Print a debug representation of an org AST node and its descendants.
+
+	Parameters
+	----------
+	value : .OrgNode
+	properties : bool
+		Also print node properties.
+	indent : str
+		Characters to indent with.
+	"""
+
+	if isinstance(value, OrgNode):
+
+		print(value.type.name)
+
+		if properties:
+			for key in sorted(value.properties):
+				print('%s:%-15s = ' % (indent * (_level + 1), key), end='')
+				dump_ast(value.properties[key], properties, indent, _level + 1)
+
+		for i, child in enumerate(value.contents):
+			print('%s%d ' % (indent * (_level + 1), i), end='')
+			dump_ast(child, properties, indent, _level + 1)
+
+	# Special printing for secondary strings, which are lists containing more nodes
+	elif isinstance(value, list) and any(isinstance(item, OrgNode) for item in value):
+		print('[')
+		for item in value:
+			print(indent * (_level + 1), end='')
+			dump_ast(item, properties, indent, _level + 1)
+		print((indent * _level) + ']')
+
+	else:
+		print(repr(value))
+
+
 class OrgTimestampInterval:
 	"""An interval of time stored in an Org mode time stamp's repeater or warning.
 
@@ -281,26 +318,18 @@ class OrgNode:
 		else:
 			raise TypeError('Expected str or int, got %r' % type(key))
 
-	def dump(self, index=None, properties=False, indent='  ', _level=0):
-		"""Print a debug representation of the node and its descendants."""
-		print(indent * _level, end='')
+	def dump(self, properties=False, indent='  '):
+		"""Print a debug representation of the node and its descendants.
 
-		if index is None:
-			print(self.type.name)
-
-		else:
-			print(index, self.type.name)
-
-		if properties:
-			for key in sorted(self.properties):
-				value = self.properties[key]
-				print('%s:%-15s = %r' % (indent * (_level + 1), key, value))
-
-		for i, child in enumerate(self.contents):
-			if isinstance(child, OrgNode):
-				child.dump(i, properties, indent, _level + 1)
-			else:
-				print('%s%d %r' % (indent * (_level + 1), i, child))
+		Parameters
+		----------
+		value : .OrgNode
+		properties : bool
+			Also print node properties.
+		indent : str
+		Characters to indent with.
+		"""
+		dump_ast(self, properties, indent)
 
 
 class OrgOutlineNode(OrgNode):
