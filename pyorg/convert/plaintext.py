@@ -31,8 +31,8 @@ class OrgPlaintextConverter(OrgConverterBase):
 			if isinstance(item, OrgNode):
 				txt = self._convert(item, ctx._push(i))
 				if blanks:
-					pre = ' ' * item.props.get('pre-blank', 0)
-					post = ' ' * item.props.get('post-blank', 0)
+					pre = ' ' * item.properties.get('pre-blank', 0)
+					post = ' ' * item.properties.get('post-blank', 0)
 					txt = pre + txt + post
 				contents_str.append(txt)
 

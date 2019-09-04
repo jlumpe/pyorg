@@ -33,7 +33,7 @@ ref
 	A unique string ID assigned by Org mode during the export process. Can be used
 	to look up targets of internal links.
 
-props
+properties
 	A dictionary of named properties that depends on the node's type. See Org
 	mode's documentation on the
 	`Element API <https://orgmode.org/worg/dev/org-element-api.html>`_ for a

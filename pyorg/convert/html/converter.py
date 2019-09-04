@@ -134,7 +134,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		if node.type.name in self.INLINE_NODES:
 			kwargs.setdefault('inline', True)
-			kwargs.setdefault('post_ws', node.props.get('post-blank', 0) > 0)
+			kwargs.setdefault('post_ws', node.properties.get('post-blank', 0) > 0)
 
 		html = self._make_elem_base(tag, **kwargs)
 		html.add_class(self.default_classes(node.type))
@@ -159,7 +159,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 		Takes care of adding whitespace after if needed.
 		"""
-		return TextNode(text, post_ws=node.props.get('post-blank', 0) > 0)
+		return TextNode(text, post_ws=node.properties.get('post-blank', 0) > 0)
 
 	def make_headline_text(self, node, ctx=None, dom=False):
 		"""Make HTML element for text content of headline node."""
@@ -254,7 +254,7 @@ class OrgHtmlConverter(OrgConverterBase):
 		rows = []
 
 		for key in ['closed', 'scheduled', 'deadline']:
-			if headline.props.get(key) is not None:
+			if headline.properties.get(key) is not None:
 				row = self._make_elem_base('tr')
 				row.children.append(self._make_elem_base('th', text=key.title()))
 
@@ -479,7 +479,7 @@ class OrgHtmlConverter(OrgConverterBase):
 
 	@_convert_node.register('src-block')
 	def _convert_src_block(self, node, ctx):
-		# params = node.props.get('parameters', {'export': 'both'})
+		# params = node.properties.get('parameters', {'export': 'both'})
 		params = {'export': 'both'}
 
 		export = params.get('export', 'both')

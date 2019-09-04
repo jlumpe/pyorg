@@ -193,7 +193,7 @@ class OrgNode:
 
 	type: .OrgNodeType
 		Node type, obtained from `org-element-type`.
-	props : dict
+	properties : dict
 		Dictionary of property values, obtained from `org-element-property`.
 	contents : list
 		List of contents (org nodes or strings), obtained from
@@ -210,14 +210,14 @@ class OrgNode:
 
 	is_outline = False
 
-	def __init__(self, type_, props=None, contents=None, keywords=None, ref=None, meta=None):
+	def __init__(self, type_, properties=None, contents=None, keywords=None, ref=None, meta=None):
 		if isinstance(type_, str):
 			type_ = ORG_NODE_TYPES[type_]
 		if not isinstance(type_, OrgNodeType):
 			raise TypeError(type(type_))
 		self.type = type_
 
-		self.props = dict(props or {})
+		self.properties = dict(properties or {})
 		self.keywords = dict(keywords or {})
 		self.ref = ref
 		self.contents = list(contents or [])
@@ -227,7 +227,7 @@ class OrgNode:
 		cp = deepcopy if deep else copy
 		return type(self)(
 			self.type,
-			props=cp(self.props),
+			properties=cp(self.properties),
 			contents=cp(self.contents),
 			keywords=cp(self.keywords),
 			ref=self.ref,
@@ -261,7 +261,7 @@ class OrgNode:
 	@property
 	def children(self):
 		"""Iterator over all child AST nodes (in contents or keyword/property values."""
-		for collection in (self.props.values(), self.keywords.values(), self.contents):
+		for collection in (self.properties.values(), self.keywords.values(), self.contents):
 			yield from self._iter_children_recursive(collection)
 
 	def __repr__(self):
@@ -277,7 +277,7 @@ class OrgNode:
 		if isinstance(key, int):
 			return self.contents[key]
 		elif isinstance(key, str):
-			return self.props[key]
+			return self.properties[key]
 		else:
 			raise TypeError('Expected str or int, got %r' % type(key))
 
@@ -292,8 +292,8 @@ class OrgNode:
 			print(index, self.type.name)
 
 		if properties:
-			for key in sorted(self.props):
-				value = self.props[key]
+			for key in sorted(self.properties):
+				value = self.properties[key]
 				print('%s:%-15s = %r' % (indent * (_level + 1), key, value))
 
 		for i, child in enumerate(self.contents):
@@ -437,8 +437,8 @@ class OrgTimestampNode(OrgNode, OrgTimestamp):
 		OrgTimestamp.__init__(
 			self,
 			self['type'],
-			start=parse_iso_date(self['start']) if self.props.get('start') else None,
-			end=parse_iso_date(self['end']) if self.props.get('end') else None,
+			start=parse_iso_date(self['start']) if self.properties.get('start') else None,
+			end=parse_iso_date(self['end']) if self.properties.get('end') else None,
 		)
 
 
@@ -547,16 +547,16 @@ class OrgDocument:
 	----------
 	root : OrgOutlineNode
 		The root of the document's Abstract Syntax Tree.
-	props : dict
+	properties : dict
 		Additional file-level properties attached to the document, such as the
 		author or date. Values may be strings or secondary strings.
 	meta : dict
 		A dictionary containing arbitrary application-specific metadata.
 	"""
 
-	def __init__(self, root, props=None, meta=None):
+	def __init__(self, root, properties=None, meta=None):
 		self.root = root
-		self.props = dict(props or [])
+		self.properties = dict(properties or [])
 		self.meta = dict(meta or [])
 
 	def assign_header_ids(self, depth=3):

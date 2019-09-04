@@ -44,7 +44,7 @@ class OrgJsonConverter(OrgConverterBase):
 	def _convert_properties(self, node, ctx):
 		return {
 			key: self._convert(value, ctx._push(key))
-			for key, value in node.props.items()
+			for key, value in node.properties.items()
 		}
 
 	@dispatch_node_type()

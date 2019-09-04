@@ -22,7 +22,7 @@ def _node_from_json(data, ctx, recurse_contents=True):
 	keywords = _mapping_from_json(data.get('keywords', {}), ctx)
 
 	cls = NODE_CLASSES.get(type_, OrgNode)
-	node = cls(type_, props=props, contents=contents, keywords=keywords, ref=ref)
+	node = cls(type_, properties=props, contents=contents, keywords=keywords, ref=ref)
 
 	return node
 
@@ -100,7 +100,7 @@ def org_doc_from_json(data):
 	contents = _list_from_json(data['contents'], ctx)
 	root = OrgDataNode('org-data', contents=contents)
 
-	doc = OrgDocument(root, props=data['properties'])
+	doc = OrgDocument(root, properties=data['properties'])
 	if ctx.errors:
 		doc.meta['export_errors'] = ctx.errors
 

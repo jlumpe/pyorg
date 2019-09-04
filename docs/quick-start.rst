@@ -117,7 +117,7 @@ Check third headline's properties to get the TODO information and tags:
 
 
 >>> hl3 = doc.root[3]
->>> hl3.props
+>>> hl3.properties
 {'title': ['A headline with a TODO and tags'],
  'deadline': OrgTimestampNode(type='timestamp'),
  'post-affiliated': 301,
