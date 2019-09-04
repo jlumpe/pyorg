@@ -9,10 +9,11 @@ Check out the [Quick start](https://pyorg.readthedocs.io/en/latest/quick-start.h
 
 ## Quick demo
 
-Communicate with running Emacs server and execute elisp code:
+Communicate with running Emacs server and execute elisp code (using the
+[python-emacs](github.com/jlumpe/python-emacs) library):
 
 ```python3
->>> from pyorg import Emacs
+>>> from emacs import Emacs
 >>> emacs = Emacs.client()
 >>> emacs.getresult('(+ 1 2)')
 3
@@ -26,34 +27,37 @@ High-level interface to Org mode:
 >>> org.orgdir  # Obtained automatically from org-directory variable in Emacs
 OrgDir('/home/jlumpe/org/')
 
->>> org.orgdir.list_files(recursive=True)
-[PosixPath('tasks.org'),
- PosixPath('inbox.org'),
- PosixPath('presentations.org'),
- PosixPath('misc.org'),
- PosixPath('research/ideas.org'),
- PosixPath('research/lab-notebook.org'),
- PosixPath('research/meetings.org'),
- PosixPath('projects/pyorg.org'),
- PosixPath('topics/control-theory.org'),
- PosixPath('topics/optogenetics.org'),
- PosixPath('topics/modeling.org'),
- PosixPath('topics/productivity.org'),
- PosixPath('topics/math.org')]
+>>> for file in org.orgdir.list_files(recursive=True):
+>>>     print(file)
+tasks.org
+inbox.org
+presentations.org
+misc.org
+research/ideas.org
+research/lab-notebook.org
+research/meetings.org
+projects/pyorg.org
+topics/control-theory.org
+topics/optogenetics.org
+topics/modeling.org
+topics/productivity.org
+topics/math.org
+
+...
 ```
 
 Read in an org file:
 
 ```python3
 >>> doc = org.read_org_file('topics/math.org')
->>> doc.keywords
+>>> doc.properties
 {'title': ['Math'],
- 'file_tags': None,
+ 'filetags': None,
  'author': ['jlumpe'],
  'creator': 'Emacs 26.2 (Org mode 9.2.4)',
  'date': [],
  'description': [],
- 'email': 'jlumpe@*****.edu',
+ 'email': 'jlumpe@*****',
  'language': 'en',
  'export_errors': []}
 ```
@@ -90,14 +94,14 @@ Root
     0. Log scale plots of log ratios
 ```
 
-View data structure of a subsection:
+View data structure of one of the headlines:
 
 ```python3
->>> header = doc.root[1][3]
->>> header
+>>> headline = doc.root[1][3]
+>>> headline
 OrgHeadlineNode(type='headline')
 
->>> header.dump(properties=True)
+>>> headline.dump(properties=True)
 headline
   :archivedp       = False
   :commentedp      = False
@@ -106,7 +110,16 @@ headline
   :priority        = None
   :raw-value       = '[[wikipedia:Gramian_Matrix][Gramian Matrix]]'
   :tags            = []
-  :title           = [OrgNode(type='link')]
+  :title           = [
+    link
+      :application     = None
+      :format          = 'bracket'
+      :path            = '//en.wikipedia.org/wiki/Gramian_Matrix'
+      :raw-link        = 'https://en.wikipedia.org/wiki/Gramian_Matrix'
+      :search-option   = None
+      :type            = 'https'
+      0 'Gramian Matrix'
+  ]
   :todo-keyword    = None
   :todo-type       = None
   0 section
@@ -122,7 +135,7 @@ headline
       1 paragraph
         0 'An important application is to compute linear independence: a set of vectors are linearly\nindependent if and only if the Gram determinant (the determinant of the Gram matrix) is non-zero.\n'
       2 paragraph
-        0 '-- Wikipedia\n
+        0 '-- Wikipedia\n'
 
 ...
 ```
@@ -131,7 +144,7 @@ Convert to HTML:
 
 ```python3
 >>> from pyorg.convert.html import to_html
->>> print(to_html(header))
+>>> print(to_html(headline))
 ```
 
 ```html
@@ -174,6 +187,20 @@ independent if and only if the Gram determinant (the determinant of the Gram mat
 	</div>
 </div>
 ```
+
+## Installation
+
+To install the Python package simply clone the repo and run `setup.py`:
+
+```bash
+git clone https://github.com/jlumpe/pyorg
+cd pyorg
+python setup.py install
+```
+
+To use most of the features which interact with the Emacs server you will need
+to install the included Emacs package `pyorg.el`.
+
 
 ## Related projects
 
