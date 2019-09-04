@@ -25,10 +25,7 @@ def export_org_file_el(file, dest):
 	-------
 	emacs.elisp.Form
 	"""
-	return E.with_current_buffer(
-		E.find_file_noselect(str(file)),
-		E.org_export_to_file(E.Q('json'), str(dest))
-	)
+	return E.pyorg_export_org_file(str(file), str(dest))
 
 
 class OrgDirectory:

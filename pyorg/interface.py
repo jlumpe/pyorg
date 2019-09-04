@@ -38,7 +38,7 @@ class Org:
 
 	def _setup_emacs(self):
 		"""Perform initial setup with Emacs."""
-		self.emacs.eval(E.require(E.Q('ox-json')))
+		self.emacs.eval(E.require(E.Q('pyorg')))
 
 	def read_org_file_direct(self, file, raw=False):
 		"""Read and parse an org file directly from Emacs.
@@ -95,8 +95,4 @@ class Org:
 		focus : bool
 			Switch window/input focus to opened buffer.
 		"""
-		path = self.orgdir._get_org_file(path)
-		el = E.find_file(str(path))
-		if focus:
-			el = [el, E.x_focus_frame(None)]
-		self.emacs.eval(el)
+		self.emacs.eval(E.pyorg_open_file(str(path), bool(focus)))
