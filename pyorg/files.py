@@ -28,6 +28,35 @@ def export_org_file_el(file, dest):
 	return E.pyorg_export_org_file(str(file), str(dest))
 
 
+def export_org_file(emacs, file, dest):
+	"""Export an org file as JSON.
+
+	Parameters
+	----------
+	emacs : emacs.Emacs
+		Emacs interface object.
+	file : str
+		Absolute path to org file to be exported.
+	dest : str
+		Absolute path to write exported data to.
+
+	Returns
+	-------
+	emacs.elisp.Form
+
+	Raises
+	------
+	FileNotFoundError
+		If ``file`` does not exist.
+	"""
+	if not os.path.isabs(file):
+		raise ValueError('File path must be absolute.')
+	if not os.path.isfile(file):
+		raise FileNotFoundError(file)
+	el = export_org_file_el(file, dest)
+	emacs.eval(el)
+
+
 class OrgDirectory:
 	"""The directory where the user's org files are kept.
 
@@ -217,8 +246,7 @@ class DirectFileLoader(OrgFileLoader):
 
 		with TemporaryDirectory() as tmpdir:
 			tmpfile = os.path.join(tmpdir, file.stem + '.json')
-			el = export_org_file_el(file, tmpfile)
-			self.emacs.eval(el)
+			export_org_file(self.emacs, file, tmpfile)
 			with open(tmpfile, encoding='utf8') as f:
 				data = json.load(f)
 
@@ -281,8 +309,7 @@ class OrgFilesystemCache(OrgFileCache):
 		src = self.base_dir.get_abs_path(file)
 		dest = self._locate_cached(file)
 		dest.parent.mkdir(parents=True, exist_ok=True)
-		el = export_org_file_el(str(src), str(dest))
-		self.emacs.eval(el)
+		export_org_file(self.emacs, str(src), str(dest))
 
 	def _read(self, file):
 		"""Read file from the cache."""
