@@ -1,7 +1,6 @@
 """Read (and write) org mode data from JSON and other formats."""
 
 from .ast import OrgDocument, OrgNode, OrgDataNode, NODE_CLASSES, OrgTimestamp
-from .agenda import OrgAgendaItem
 from .util import TreeNamespace, parse_iso_date
 
 
