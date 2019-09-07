@@ -7,9 +7,8 @@ syntax.
 
 import re
 from collections.abc import Iterable
-from datetime import datetime, timedelta
 from typing import NamedTuple
-from collections import ChainMap, namedtuple
+from collections import ChainMap
 from copy import copy, deepcopy
 
 from .util import SingleDispatchBase, parse_iso_date
