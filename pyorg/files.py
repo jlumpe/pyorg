@@ -7,54 +7,8 @@ from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
 from tempfile import TemporaryDirectory
 
-from emacs.elisp import E
 from .io import org_doc_from_json
-
-
-def export_org_file_el(file, dest):
-	"""Create elisp code to export org file as JSON.
-
-	Parameters
-	----------
-	file : str
-		Absolute path to org file to be exported.
-	dest : str
-		Absolute path to write exported data to.
-
-	Returns
-	-------
-	emacs.elisp.Form
-	"""
-	return E.pyorg_export_org_file(str(file), str(dest))
-
-
-def export_org_file(emacs, file, dest):
-	"""Export an org file as JSON.
-
-	Parameters
-	----------
-	emacs : emacs.Emacs
-		Emacs interface object.
-	file : str
-		Absolute path to org file to be exported.
-	dest : str
-		Absolute path to write exported data to.
-
-	Returns
-	-------
-	emacs.elisp.Form
-
-	Raises
-	------
-	FileNotFoundError
-		If ``file`` does not exist.
-	"""
-	if not os.path.isabs(file):
-		raise ValueError('File path must be absolute.')
-	if not os.path.isfile(file):
-		raise FileNotFoundError(file)
-	el = export_org_file_el(file, dest)
-	emacs.eval(el)
+from .elisp import export_org_file
 
 
 class OrgDirectory:
