@@ -60,6 +60,7 @@ class Org:
 
 		Raises
 		------
+		emacs.emacs.EmacsException
 		FileNotFoundError
 		"""
 		return self.direct_loader.load_file(file, raw=raw)
@@ -81,6 +82,7 @@ class Org:
 
 		Raises
 		------
+		emacs.emacs.EmacsException
 		FileNotFoundError
 		"""
 		return self.loader.load_file(file, raw=raw)
