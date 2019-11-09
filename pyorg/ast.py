@@ -300,6 +300,27 @@ class OrgNode:
 		for collection in (self.properties.values(), self.keywords.values(), self.contents):
 			yield from self._iter_children_recursive(collection)
 
+	def descendants(self, incself=False, properties=False):
+		"""Recursively iterate over all of the node's descendants.
+
+		Parameters
+		----------
+		incself : bool
+			Include self.
+		properties : bool
+			Include children in the node's properties, not just :attr:`contents`
+			(see :attr:`children`).
+
+		Yields
+		-------
+		.OrgNode
+		"""
+		if incself:
+			yield self
+
+		for item in (self.children if properties else self.contents):
+			yield from item.descendants(incself=True, properties=properties)
+
 	def __repr__(self):
 		return '%s(type=%r)' % (type(self).__name__, self.type.name)
 
@@ -412,6 +433,12 @@ class OrgHeadlineNode(OrgOutlineNode):
 		Whether this outline has a TODO keyword.
 	priority_chr : str
 		Priority character if headline with priority, otherwise None.
+	scheduled : OrgTimestamp
+		The timestamp in the "scheduled" property of the headline, if present.
+	deadline : OrgTimestamp
+		The timestamp in the "deadline" property of the headline, if present.
+	closed : OrgTimestamp
+		The timestamp in the "closed" property of the headline, if present.
 	"""
 
 	def __init__(self, type_, *args, title=None, id=None, **kw):
@@ -434,6 +461,18 @@ class OrgHeadlineNode(OrgOutlineNode):
 	@property
 	def priority_chr(self):
 		return None if self['priority'] is None else chr(self['priority'])
+
+	@property
+	def deadline(self):
+		return self.properties.get('deadline')
+
+	@property
+	def scheduled(self):
+		return self.properties.get('scheduled')
+
+	@property
+	def closed(self):
+		return self.properties.get('closed')
 
 	def _dump_name(self):
 		return self.title
