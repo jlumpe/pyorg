@@ -108,3 +108,38 @@ class Org:
 		if not file.is_file():
 			raise FileNotFoundError(file)
 		pyel.switch_to_file_buffer(self.emacs, str(file), focus)
+
+	def goto_headline(self, ids, focus=True):
+		"""Open/display an org file in Emacs and move to a specific headline.
+
+		Parameters
+		----------
+		ids : dict
+			Identifiers for the headline. See :func:`pyorg.elisp.goto_headline`
+			and :func:`pyorg.outline.headline_identifiers` for more information.
+			The value of the ``'file'`` key may be given as relative to
+			:attr:`orgdir`.
+		focus : bool
+			Give the active Emacs frame focus from the OS' window system.
+
+		Returns
+		-------
+		bool
+			True if the headline was found, False otherwise.
+
+		Raises
+		------
+		emacs.emacs.EmacsException
+		FileNotFoundError
+		"""
+		ids = dict(ids)
+
+		file = ids.pop('file', None)
+		if file is not None:
+			file = self.orgdir.get_abs_path(file, outside_ok=True)
+			if not file.is_file():
+				raise FileNotFoundError(file)
+
+			ids['file'] = file
+
+		return pyel.goto_headline(self.emacs, ids, focus=focus)
