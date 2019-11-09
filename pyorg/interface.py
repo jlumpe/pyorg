@@ -1,5 +1,6 @@
 from emacs.elisp import E
 from .files import OrgDirectory, DirectFileLoader
+import pyorg.elisp as pyel
 
 
 class Org:
@@ -87,14 +88,23 @@ class Org:
 		"""
 		return self.loader.load_file(file, raw=raw)
 
-	def open_org_file(self, path, focus=False):
+	def open_org_file(self, file, focus=False):
 		"""Open an org file in the org directory for editing in Emacs.
 
 		Parameters
 		----------
-		path : str or pathlib.Path
-			File path relative to org directory.
+		file : str or pathlib.Path
+			Path to file to open. If not absolute it is taken to be relative to
+			:attr:`orgdir`.
 		focus : bool
-			Switch window/input focus to opened buffer.
+			Switch window system focus to the active Emacs frame.
+
+		Raises
+		------
+		emacs.emacs.EmacsException
+		FileNotFoundError
 		"""
-		self.emacs.eval(E.pyorg_open_file(str(path), bool(focus)))
+		file = self.orgdir.get_abs_path(file, outside_ok=True)
+		if not file.is_file():
+			raise FileNotFoundError(file)
+		pyel.switch_to_file_buffer(self.emacs, str(file), focus)
