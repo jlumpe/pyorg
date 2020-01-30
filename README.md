@@ -10,7 +10,7 @@ Check out the [Quick start](https://pyorg.readthedocs.io/en/latest/quick-start.h
 ## Quick demo
 
 Communicate with running Emacs server and execute elisp code (using the
-[python-emacs](github.com/jlumpe/python-emacs) library):
+[python-emacs](https://github.com/jlumpe/python-emacs) library):
 
 ```python3
 >>> from emacs import Emacs
